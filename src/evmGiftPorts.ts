@@ -1,3 +1,4 @@
+import {rpcFetchOptions} from '../shared/rpcFetch';
 import { createPublicClient,http,erc20Abi,TransactionReceiptNotFoundError,TransactionNotFoundError,toHex,type Address,type Hash,type Hex } from 'viem';
 import { evmGodTokenReadPort,type GodTokenReadPort,type GodTokenTransfer } from './godTokenService';
 import { evmReceivingAddressSchema } from '../shared/profile';
@@ -23,7 +24,7 @@ export interface EvmGiftRpcPort extends GodTokenReadPort {
   blockHash(number:bigint):Promise<Hash|null>;
 }
 export function evmGiftRpcPort(rpcUrl:string,signal:AbortSignal):EvmGiftRpcPort {
-  const client=createPublicClient({ccipRead:false,transport:http(rpcUrl,{retryCount:0,timeout:8000,maxResponseBodySize:262144,fetchOptions:{signal,credentials:'omit',referrerPolicy:'no-referrer'}})});
+  const client=createPublicClient({ccipRead:false,transport:http(rpcUrl,{retryCount:0,timeout:8000,maxResponseBodySize:262144,fetchOptions:rpcFetchOptions(signal)})});
   const args=(t:GodTokenTransfer,account:Address)=>({address:t.to,abi:erc20Abi,functionName:'transfer' as const,args:[t.recipient,t.amount] as const,account});
   return {...evmGodTokenReadPort(rpcUrl,signal),
     simulate:async(t,account)=>(await client.simulateContract(args(t,account))).result,

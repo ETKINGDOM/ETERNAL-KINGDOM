@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { accountProfileSchema, evmReceivingAddressSchema, type AccountProfileAdapter, type ProfileMutation } from '../shared/profile';
+import {releaseStorageKey,releaseHeaders} from './releaseScope';
 
 export class ProfileRequestError extends Error{
   constructor(readonly status:number){super(status===409?'Your profile changed in another page. Reload the saved profile and review your changes again.':status===401||status===403?'Your wallet session changed or expired. Sign in again before saving.':status===429?'Too many saves. Wait a minute, then reload the saved profile.':'The save or connection could not be confirmed. Reload the saved profile before trying again.');}
 }
 async function request(path:string,body:unknown,accountId:string,signal?:AbortSignal){
-  const response=await fetch(`/api/auth/${path}`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(10_000)]):AbortSignal.timeout(10_000)});
+  const response=await fetch(`/api/auth/${path}`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',...releaseHeaders()},body:JSON.stringify(body),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(10_000)]):AbortSignal.timeout(10_000)});
   if(!response.ok)throw new ProfileRequestError(response.status);
   const value:unknown=await response.json();
   if(typeof value!=='object'||value===null||!('profile' in value))throw new Error('Invalid profile');
@@ -16,7 +17,7 @@ export const hostedProfiles:AccountProfileAdapter={
   load:(accountId,signal)=>request('profile',{accountId},accountId,signal),
   save:(change:ProfileMutation,signal)=>request('profile/save',change,change.accountId,signal),
 };
-const GUEST_RECIPIENT_KEY='ek:guest:recipient:v1';
+const GUEST_RECIPIENT_KEY=releaseStorageKey('ek:guest:recipient:v1');
 const guestRecipientSchema=z.object({address:evmReceivingAddressSchema.nullable(),revision:z.string().max(40)}).strict();
 export type GuestRecipient=z.infer<typeof guestRecipientSchema>;
 export function readGuestRecipient():GuestRecipient{

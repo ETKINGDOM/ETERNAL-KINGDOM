@@ -42,6 +42,14 @@
       {
         "name": "COMMUNITY",
         "class_name": "CommunityHub"
+      },
+      {
+        "name": "FAITH_INDEX",
+        "class_name": "FaithIndex"
+      },
+      {
+        "name": "PUBLIC_FAITH_DB",
+        "class_name": "PublicFaithDatabase"
       }
     ]
   },
@@ -75,6 +83,18 @@
       "tag": "v5-community",
       "new_sqlite_classes": [
         "CommunityHub"
+      ]
+    },
+    {
+      "tag": "v6-public-index",
+      "new_sqlite_classes": [
+        "FaithIndex"
+      ]
+    },
+    {
+      "tag": "v7-public-database",
+      "new_sqlite_classes": [
+        "PublicFaithDatabase"
       ]
     }
   ],

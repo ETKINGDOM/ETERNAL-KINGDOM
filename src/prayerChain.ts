@@ -1,3 +1,4 @@
+import {rpcFetchOptions,type RpcFetch} from '../shared/rpcFetch';
 import {createPublicClient,http,keccak256,decodeEventLog,type Address,type Hash,type Hex,TransactionReceiptNotFoundError,TransactionNotFoundError} from 'viem';
 import {chainBroadcast,type ChainSettings} from '../shared/chainConfiguration';
 import {isRobinhoodNitroNetwork} from '../shared/robinhoodNetwork';
@@ -17,8 +18,8 @@ export interface PrayerRpcPort {
   head():Promise<bigint>;blockHash(number:bigint):Promise<Hash|null>;
   stored(proof:PrayerProof,blockNumber:bigint):Promise<readonly [Address,bigint,Hex]>;
 }
-export function prayerRpc(rpcUrl:string,signal:AbortSignal):PrayerRpcPort {
-  const client=createPublicClient({ccipRead:false,transport:http(rpcUrl,{retryCount:0,timeout:8000,maxResponseBodySize:262144,fetchOptions:{signal,credentials:'omit',referrerPolicy:'no-referrer'}})});
+export function prayerRpc(rpcUrl:string,signal:AbortSignal,fetchFn?:RpcFetch):PrayerRpcPort {
+  const client=createPublicClient({ccipRead:false,transport:http(rpcUrl,{retryCount:0,timeout:8000,maxResponseBodySize:262144,fetchOptions:rpcFetchOptions(signal),fetchFn})});
   const args=(p:PrayerProof)=>({address:p.contract,abi:prayerAbi,functionName:'recordPrayer' as const,args:[p.bytes] as const,account:p.payer});
   return {chainId:()=>client.getChainId(),code:address=>client.getCode({address}),
     simulate:async p=>(await client.simulateContract(args(p))).result,gas:p=>client.estimateContractGas(args(p)),

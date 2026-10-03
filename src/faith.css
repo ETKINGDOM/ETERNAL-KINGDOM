@@ -10,12 +10,9 @@
 .prayer-history article{border:1px solid #c7ac7066;border-radius:10px;padding:16px;margin:12px 0}
 .prayer-history-button{position:fixed;right:14px;top:118px;z-index:20;min-height:44px;font-size:12px;max-width:calc(100vw - 28px)}
 .holder-history-button{top:170px}
-.transaction-shortcuts{position:fixed;left:14px;top:82px;z-index:20;display:flex;flex-direction:column;gap:6px;max-width:min(190px,calc(100vw - 228px));max-height:min(150px,40dvh);overflow:auto}
-.transaction-shortcuts:empty{display:none}.transaction-shortcuts button{min-height:44px;font-size:12px;background:#152c3ef2;white-space:normal;overflow-wrap:anywhere;text-align:left}
 .faith-wallet-notice{padding:10px 12px;border:1px solid #d9bb8255;border-radius:8px;background:#d5b87b0c;color:#eed49e;font-size:13px;line-height:1.6}
 .transaction-wait-status{display:flex;align-items:center;gap:10px;padding:12px;margin:12px 0;border:1px solid #d9bb8270;border-radius:10px;background:#102638;color:#f2ddb4;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.transaction-wait-status>svg{flex-shrink:0}.transaction-wait-status strong,.transaction-wait-status small{display:block}.transaction-wait-status small{margin-top:4px;color:#bdcad0;font-size:11px}.transaction-wait-spinner{animation:transaction-wait-spin 1.5s linear infinite}@keyframes transaction-wait-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.transaction-wait-spinner{animation:none}}
 .transaction-wait-hud{position:fixed;z-index:34;top:112px;left:50%;transform:translateX(-50%);width:min(350px,calc(100% - 28px));pointer-events:none}.transaction-wait-hud .transaction-wait-status{margin:0;background:#142c3bea}@media(max-height:500px){.transaction-wait-hud{top:76px}}
-@media(max-height:500px){.transaction-shortcuts{max-height:64px}}
 .token-history{min-width:0;font-size:13px;line-height:1.7}.token-history article{border:1px solid #c7ac7066;border-radius:10px;padding:16px;margin:14px 0}
 .token-history h3{font:20px/1.5 Georgia,serif;color:#f2ddb4;margin:12px 0 6px}.token-history dt{font-size:11px;color:#bacbd1;margin-top:12px}.token-history dd{margin:4px 0;min-width:0}
 .token-history code{display:block;white-space:normal;word-break:break-all;overflow-wrap:anywhere;font-size:12px;line-height:1.7;letter-spacing:0}.token-history input{font-size:16px!important;min-width:0}

@@ -1,3 +1,4 @@
+import {rpcFetchOptions,type RpcFetch} from '../shared/rpcFetch';
 import { createPublicClient, http, erc20Abi, encodeFunctionData, decodeEventLog, formatUnits, getAddress, type Address, type Hash } from 'viem';
 import { evmReceivingAddressSchema } from '../shared/profile';
 import { configuredGodToken, assertCurrentGodToken, godTokenDonation, type ChainSettings, type GodTokenSnapshot } from '../shared/chainConfiguration';
@@ -10,8 +11,8 @@ export interface GodTokenReadPort {
   decimals(contract:Address):Promise<number>;
   balance(contract:Address,account:Address):Promise<bigint>;
 }
-export function evmGodTokenReadPort(rpcUrl:string,signal:AbortSignal):GodTokenReadPort {
-  const client=createPublicClient({ccipRead:false,transport:http(rpcUrl,{retryCount:0,timeout:8000,maxResponseBodySize:65536,fetchOptions:{signal,credentials:'omit',referrerPolicy:'no-referrer'}})});
+export function evmGodTokenReadPort(rpcUrl:string,signal:AbortSignal,fetchFn?:RpcFetch):GodTokenReadPort {
+  const client=createPublicClient({ccipRead:false,transport:http(rpcUrl,{retryCount:0,timeout:8000,maxResponseBodySize:65536,fetchOptions:rpcFetchOptions(signal),fetchFn})});
   return {
     chainId:()=>client.getChainId(),bytecode:address=>client.getBytecode({address}),
     symbol:address=>client.readContract({address,abi:erc20Abi,functionName:'symbol'}),

@@ -1,3 +1,4 @@
+import {rpcFetchOptions,type RpcFetch} from '../shared/rpcFetch';
 import {createPublicClient,http,keccak256,type Address,type Hash,type Hex} from 'viem';
 import {configuredGodToken,faithRecordPolicy,chainBroadcast,type ChainSettings,type GodTokenSnapshot} from '../shared/chainConfiguration';
 import {isRobinhoodNitroNetwork} from '../shared/robinhoodNetwork';
@@ -8,9 +9,9 @@ import {evmGodTokenReadPort,godTokenService,type GodTokenReadPort} from './godTo
 export interface HolderFaithReadPort extends GodTokenReadPort {
   parameters(contract:Address):Promise<{token:Address;decimals:number;minimum:bigint}>;
 }
-export function holderFaithReadPort(url:string,signal:AbortSignal):HolderFaithReadPort{
-  const client=createPublicClient({ccipRead:false,transport:http(url,{retryCount:0,timeout:8000,maxResponseBodySize:65536,fetchOptions:{signal,credentials:'omit',referrerPolicy:'no-referrer'}})});
-  return {...evmGodTokenReadPort(url,signal),async parameters(address){
+export function holderFaithReadPort(url:string,signal:AbortSignal,fetchFn?:RpcFetch):HolderFaithReadPort{
+  const client=createPublicClient({ccipRead:false,transport:http(url,{retryCount:0,timeout:8000,maxResponseBodySize:65536,fetchOptions:rpcFetchOptions(signal),fetchFn})});
+  return {...evmGodTokenReadPort(url,signal,fetchFn),async parameters(address){
     const [token,decimals,minimum]=await Promise.all([
       client.readContract({address,abi:holderFaithAbi,functionName:'godToken'}),
       client.readContract({address,abi:holderFaithAbi,functionName:'tokenDecimals'}),

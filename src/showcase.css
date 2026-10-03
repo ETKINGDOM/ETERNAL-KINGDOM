@@ -1,0 +1,8 @@
+.showcase-label{font-size:12px;line-height:1.6;color:var(--gold,#d9b775)}
+.entry-content>.showcase-label{display:block;margin:14px 0}
+.showcase-notice{position:absolute;z-index:15;top:72px;left:50%;transform:translateX(-50%);width:max-content;max-width:85%;padding:10px 15px;border-radius:12px;background:#172f40ee;color:#f0e4c9;font-size:12px;pointer-events:none}
+.showcase-shell .world-layout{grid-template-columns:minmax(0,1fr)}
+.showcase-shell .guide-card{margin-top:16px}
+.showcase-shell .scene-top-controls{pointer-events:auto}
+.showcase-listen{min-height:44px;padding:8px 12px;border:1px solid #f6e6c339;border-radius:20px;background:#213342b3;color:#f4e9cf;font-size:11px}
+@media(max-width:700px){.showcase-shell .site-header>.showcase-label{display:none}.showcase-notice{top:62px}}

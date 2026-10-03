@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import {releaseSocketUrl} from './releaseScope';
 import { serverPacketSchema, type ChatMessage, type ClientPacket, type Player } from '../shared/protocol';
 import { CHAT_TTL, COLORS, type Scene } from '../shared/world';
 import { receiveSpeech, type SpeechBubble } from './speechBubbleState';
@@ -53,7 +54,7 @@ export function useWorld(scene: Scene, channel: number, profile: Profile, enable
         }
       }
       if(disposed||currentScope.current!==identityScope)return;
-      const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/rooms/${scene}/${channel}`,protocols);
+      const ws = new WebSocket(releaseSocketUrl(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/rooms/${scene}/${channel}`),protocols);
       socket.current = ws;
       connectedScope.current=identityScope;
       ws.onmessage = event => {

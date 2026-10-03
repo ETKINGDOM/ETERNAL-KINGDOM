@@ -1,8 +1,9 @@
-import {conversationSchema,snapshotSchema,type PrivateSocialAdapter} from '../shared/social';
+import {releaseHeaders} from './releaseScope';
+import {conversationSchema,snapshotSchema,FRIEND_REMINDER_HEADER,type PrivateSocialAdapter} from '../shared/social';
 export class SocialRejection extends Error{constructor(message:string,readonly status:number){super(message);this.name='SocialRejection';}}
 
 async function request(body:unknown,signal?:AbortSignal){
-  const response=await fetch('/api/auth/social',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(10_000)]):AbortSignal.timeout(10_000)}).catch(()=>{throw new Error('The result could not be confirmed. Nothing will be retried automatically. Refresh to check before trying again.');});
+  const response=await fetch('/api/auth/social',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',[FRIEND_REMINDER_HEADER]:'1',...releaseHeaders()},body:JSON.stringify(body),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(10_000)]):AbortSignal.timeout(10_000)}).catch(()=>{throw new Error('The result could not be confirmed. Nothing will be retried automatically. Refresh to check before trying again.');});
   if(!response.ok){
     const value:unknown=await response.json().catch(()=>null);
     const detail=value&&typeof value==='object'&&'error' in value&&typeof value.error==='string'?value.error:'The connection or change could not be confirmed.';

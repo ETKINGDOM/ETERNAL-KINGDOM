@@ -1,7 +1,8 @@
 import {z} from 'zod';
 import {isScene,type Scene} from '../shared/scenes';
 import {allowsLoginFamily,readWalletLoginHint,walletBrands,type WalletBrand,type LoginFamily} from './walletLoginPolicy';
-export const WALLET_RETURN_KEY='ek:wallet-return:v1',WALLET_RETURN_TTL=15*60_000;
+import {releaseStorageKey} from './releaseScope';
+export const WALLET_RETURN_KEY=releaseStorageKey('ek:wallet-return:v1'),WALLET_RETURN_TTL=15*60_000;
 const visitSchema=z.object({version:z.literal(1),scene:z.string().refine(isScene),channel:z.number().int().min(1).max(3),legacy:z.boolean(),expiresAt:z.number().int().positive(),wallet:z.enum(walletBrands).optional(),family:z.enum(['evm','solana']).optional()}).strict().refine(v=>v.wallet&&v.family?allowsLoginFamily(v.wallet,v.family):!v.wallet&&!v.family);
 export type WalletReturnVisit={scene:Scene;channel:number;legacy:boolean;wallet?:WalletBrand;family?:LoginFamily};
 type Store=Pick<Storage,'getItem'|'setItem'|'removeItem'>;

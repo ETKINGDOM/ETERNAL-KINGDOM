@@ -2,8 +2,9 @@ import {z} from 'zod';
 import {walletAccountId,walletAccountSchema,type WalletAccountIdentity} from '../shared/identity';
 import type {WalletChoice} from './walletIdentity';
 import {allowsLoginFamily,walletBrand} from './walletLoginPolicy';
+import {releaseStorageKey} from './releaseScope';
 
-export const LAST_WALLET_KEY='ek:auth:last-wallet:v1';
+export const LAST_WALLET_KEY=releaseStorageKey('ek:auth:last-wallet:v1');
 const rememberedSchema=z.object({version:z.literal(1),walletId:z.string().min(1).max(160),account:walletAccountSchema,resume:z.boolean()}).strict();
 export type RememberedWallet=z.infer<typeof rememberedSchema>;
 type Store=Pick<Storage,'getItem'|'setItem'>;

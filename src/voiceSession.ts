@@ -119,5 +119,9 @@ export class VoiceSession {
     }catch{if(epoch===this.generation)this.leave('Voice setup failed. No audio was recorded.');}
   }
   mute(){const muted=!this.state.muted;this.stream?.getAudioTracks().forEach(track=>track.enabled=!muted);this.patch({muted});}
-  async resumeAudio(){try{await this.remote?.play();this.patch({playbackBlocked:false});}catch{this.patch({playbackBlocked:true});}}
+  async resumeAudio(){
+    const epoch=this.generation;
+    try{await this.remote?.play();if(epoch===this.generation)this.patch({playbackBlocked:false});}
+    catch{if(epoch===this.generation)this.patch({playbackBlocked:true});}
+  }
 }

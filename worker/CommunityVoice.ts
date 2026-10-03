@@ -28,7 +28,7 @@ export class CommunityVoice{
   }
   clean(disconnected?:string){
     const s=this.p.load(),before=JSON.stringify(s),affected=s.parties.flatMap(g=>g.members.map(m=>m.personId)).concat(s.invitations.flatMap(i=>[i.to.personId,i.from.personId]));
-    for(const g of s.parties){const old=g.members.length;g.members=g.expiresAt<=this.now()?[]:g.members.filter(m=>m.connection!==disconnected&&m.lease>this.now()&&this.p.person(m.connection));if(old!==g.members.length)g.revision++;}
+    for(const g of s.parties){const old=g.members.length;g.members=g.expiresAt<=this.now()?[]:g.members.filter(m=>m.connection!==disconnected&&m.lease>this.now()&&this.p.person(m.connection));if(old!==g.members.length){g.revision++;if(g.members.length===1){g.members[0].ready=false;g.members[0].muted=false;}}}
     s.parties=s.parties.filter(g=>g.members.length);s.invitations=s.invitations.filter(i=>i.expiresAt>this.now()&&s.parties.some(g=>g.id===i.partyId&&g.members.some(m=>m.personId===i.from.personId))&&this.p.connections(i.to.personId).length);
     if(JSON.stringify(s)!==before){this.p.save(s);this.notify(s,affected);}
   }
@@ -84,11 +84,11 @@ export class CommunityVoice{
     if(party.members.some(m=>m.personId!==actor.personId&&!checkIds.includes(m.personId)))return;
     const member=party.members.find(m=>m.connection===connection)!;
     if(packet.type==='party-control'){
-      const latest=this.p.person(connection);if(latest){member.name=latest.name;member.color=latest.color;}
+      const latest=this.p.person(connection),profileChanged=Boolean(latest&&(member.name!==latest.name||member.color!==latest.color));if(latest){member.name=latest.name;member.color=latest.color;}
       if(packet.action==='ready')member.ready=true;
       if(packet.action==='mute')member.muted=packet.muted??true;
       member.lease=this.now()+(party.members.length<2?PARTY_INVITE_TTL:PARTY_LEASE);
-      this.p.save(state,packet.action==='heartbeat');this.notify(state,party.members.map(m=>m.personId));return;
+      this.p.save(state,packet.action==='heartbeat'&&!profileChanged);this.notify(state,party.members.map(m=>m.personId));return;
     }
     if(packet.type==='party-signal'){
       const target=party.members.find(m=>m.personId===packet.peer);

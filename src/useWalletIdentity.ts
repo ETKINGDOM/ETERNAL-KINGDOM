@@ -9,9 +9,10 @@ import { discoverInjectedEvm, mergeEvmChoice } from './injectedEvmWallet';
 import {readBrowserRememberedWallet,saveBrowserRememberedWallet,rememberedChoice,matchesRememberedAccount,readWalletQuietly,type RememberedWallet} from './rememberedWallet';
 import {ensureWalletNetwork,matchesSessionNetwork,sameWalletAddress,WalletNetworkError,type WalletNetwork} from './walletNetwork';
 import {projectChainSettings} from './projectChainSettings';
+import {releaseStorageKey} from './releaseScope';
 
 type Connection=WalletAccountIdentity&{wallet:WalletChoice};
-const REVOKE_KEY='ek:auth:signout-pending',PROVIDER_KEY='ek:auth:provider';
+const REVOKE_KEY=releaseStorageKey('ek:auth:signout-pending'),PROVIDER_KEY=releaseStorageKey('ek:auth:provider');
 const pendingRevoke=()=>{try{return localStorage.getItem(REVOKE_KEY)==='1';}catch{return false;}};
 const markRevoke=(pending:boolean)=>{try{if(pending)localStorage.setItem(REVOKE_KEY,'1');else localStorage.removeItem(REVOKE_KEY);}catch{/* In-memory state still fails closed. */}};
 function authStorageAvailable(){try{localStorage.setItem('ek:auth:storage-check','1');localStorage.removeItem('ek:auth:storage-check');return true;}catch{return false;}}

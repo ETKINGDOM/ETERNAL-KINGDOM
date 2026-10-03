@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {releaseStorageKey} from './releaseScope';
 import { flushSync } from 'react-dom';
 import { ArrowDown, ArrowRight, Check, ChevronDown, DoorOpen, Heart, Leaf, MessageCircle, ScrollText, Shield, Sparkles, Users, Volume2, VolumeX, X } from 'lucide-react';
 import { clientPacketSchema,nameSchema, type Player,type ChatMessage,type Posture } from '../shared/protocol';
@@ -17,7 +18,8 @@ import type { SanctuaryAction } from '../shared/places';
 import RunControl from './RunControl';
 import WorldToolbar from './WorldToolbar';
 import { projectChainSettings } from './projectChainSettings';
-import { chainBroadcast,configuredGodToken } from '../shared/chainConfiguration';
+import { chainBroadcast,configuredGodToken,isShowcase } from '../shared/chainConfiguration';
+import ShowcaseApp from './ShowcaseApp';
 import { streetFeature, type StreetFeature } from '../shared/market';
 import { useWalletIdentity } from './useWalletIdentity';
 import WalletIdentityPanel from './WalletIdentityPanel';
@@ -31,6 +33,7 @@ import {hostedGiftRecipients} from './giftRecipientStorage';
 import {useSocialChat} from './useSocialChat';
 import PersonMenu from './PersonMenu';
 import FriendsPanel from './FriendsPanel';
+import FriendRequestsHud from './FriendRequestsHud';
 import type {SocialPeer} from '../shared/social';
 import {useCommunity} from './useCommunity';
 import {usePartyVoice} from './usePartyVoice';
@@ -60,6 +63,9 @@ import {browserWorldVisit,saveBrowserWorldVisit} from './worldVisit';
 import {transactionWaitPhase} from './transactionLedger';
 import TransactionWaitStatus from './TransactionWaitStatus';
 import InfoHint from './InfoHint';
+import LampstandPanel from './LampstandPanel';
+import ActivityCenter from './ActivityCenter';
+import type {ActivityInput} from './activityMessages';
 
 const initialWalletReturn=consumeBrowserWalletReturn(location.search);
 const initialVisit=browserWorldVisit();
@@ -81,7 +87,7 @@ const DailyLampPanel=lazy(()=>import('./DailyLampPanel'));
 const showGodTokenPanel=projectChainSettings.status==='invalid'||Boolean(configuredGodToken(projectChainSettings));
 const prayerEnabled=chainBroadcast(projectChainSettings,'prayers');
 
-const PROFILE_KEY = 'ek:guest:v1';
+const PROFILE_KEY = releaseStorageKey('ek:guest:v1');
 function readProfile(): Profile {
   try { const p = JSON.parse(localStorage.getItem(PROFILE_KEY) ?? '{}'); if (nameSchema.safeParse(p.name).success && COLORS.includes(p.color)) return { name: p.name, color: p.color }; } catch { /* Private browsing is supported. */ }
   return { name: 'Pilgrim', color: COLORS[0] };
@@ -105,16 +111,14 @@ function ProfileEditor({ profile, save, hosted=false, disabled=false }: { profil
     </fieldset>
   </form>;
 }
-function PersonalWords({account}:{account?:string}){
-  const [open,setOpen]=useState(false);
-  return <details onToggle={e=>setOpen(e.currentTarget.open)}><summary>My onchain words</summary>{open&&<Suspense fallback={<p role="status">Preparing your record reader…</p>}><SacredRecordList active personal account={account}/></Suspense>}</details>;
-}
-export default function App() {
+export default function App(){return isShowcase(projectChainSettings)?<ShowcaseApp/>:<AlphaApp/>;}
+function AlphaApp() {
   const touchLayout=useTouchLayout(),movementInput=useMemo(createMovementInput,[]);
   const [textFocused,setTextFocused]=useState(false);
   const responseNarration=useResponseNarration();
   const ritualLight=useRitualLight();
   const ritualDelivery=useRitualDelivery();
+  const [lampActivity,setLampActivity]=useState<ActivityInput|null>(null);
   const [pageVisible,setPageVisible]=useState(!document.hidden),[presentedWorld,setPresentedWorld]=useState('');
   useEffect(()=>{const change=()=>setPageVisible(!document.hidden);document.addEventListener('visibilitychange',change);return()=>document.removeEventListener('visibilitychange',change);},[]);
   const modalSpeaking=useRef(false);
@@ -138,7 +142,7 @@ export default function App() {
   const [toolbarCollapsed,setToolbarCollapsed]=useState(touchLayout);
   useEffect(()=>{
     // Leave the small screen clear for the just-confirmed avatar cue.
-    if(touchLayout&&ritualLight.cue?.state==='confirmed')setToolbarCollapsed(true);
+    if(touchLayout&&ritualLight.cue&&ritualLight.cue.state!=='local-preview')setToolbarCollapsed(true);
   },[touchLayout,ritualLight.cue?.id]);
   const [faithKind,setFaithKind]=useState<RecordKind>('prayer');
   const [entered,setEntered]=useState(Boolean(initialWalletReturn||initialVisit));
@@ -217,6 +221,19 @@ export default function App() {
   useEffect(()=>{if(modal==='faith'&&voice.state.party)voice.session.leave('Private faith composer opened. Live voice and microphone stopped.');},[modal,voice.state.party,voice.session]);
   const selected=world.players.find(p=>p.id===selection?.id)??null;
   const senderScope=session?`${session.accountId}:${session.expiresAt}`:'guest';
+  function lampLit(){
+    ritualDelivery.clear();ritualLight.light.showDailyLamp(senderScope);
+    setLampActivity({id:`lamp:${crypto.randomUUID()}`,kind:'lamp',status:'lit'});
+    // Do not discard unsaved appearance changes when lighting in the profile.
+    setModalState(current=>current==='lampstand'?null:current);
+  }
+  const activityItems=useMemo<ActivityInput[]>(()=>[
+    ...prayerTransactions.entries.map(e=>({id:`prayer:${e.id}`,kind:'prayer' as const,status:e.status})),
+    ...holderTransactions.entries.map<ActivityInput>(e=>({id:`faith:${e.id}`,kind:e.kind??'faith',status:e.status})),
+    ...tokenTransactions.entries.map<ActivityInput>(e=>({id:`token:${e.id}`,kind:e.proof?.kind??'token',status:e.status})),
+    ...giftTransactions.entries.map(e=>({id:`gift:${e.id}`,kind:'gift' as const,status:e.status})),
+    ...(lampActivity?[lampActivity]:[]),
+  ],[prayerTransactions.entries,holderTransactions.entries,tokenTransactions.entries,giftTransactions.entries,lampActivity]);
   // Closing a dialog keeps encouragement; changing world/session cannot replay it.
   useEffect(()=>{ritualDelivery.clear();},[scene,channel,senderScope,quality,ritualDelivery]);
   const presentationKey=JSON.stringify([scene,quality]);
@@ -224,7 +241,9 @@ export default function App() {
   useEffect(()=>{
     if(!entered||!pageVisible||modal||selection||transitioning||presentedWorld!==presentationKey||ritualLight.cue?.startedAt!==null)return;
     // Let the closed dialog leave the top layer and the world paint first.
-    let second=0;const first=requestAnimationFrame(()=>{second=requestAnimationFrame(()=>ritualDelivery.reveal());});
+    let second=0;const first=requestAnimationFrame(()=>{second=requestAnimationFrame(()=>{
+      if(ritualLight.cue?.state==='daily-lamp')ritualLight.light.activate(ritualLight.cue.id);else ritualDelivery.reveal();
+    });});
     return()=>{cancelAnimationFrame(first);cancelAnimationFrame(second);};
   },[entered,pageVisible,modal,selection,transitioning,presentedWorld,presentationKey,ritualLight.cue?.id,ritualLight.cue?.startedAt,ritualDelivery]);
   const giftPerson=currentGiftPerson(giftSelection,world.players,{scene,channel,senderScope,online:world.status==='online',self:world.self});
@@ -321,7 +340,7 @@ export default function App() {
           <div className="sanctuary-caption" key={scene}><span>{sceneInfo.caption}</span><h1>{scene==='temple'?'Be still. You are here.':sceneInfo.name}</h1><p>{sceneInfo.subtitle}</p></div>
           <div className={`scene-transition ${transitioning?'visible':''}`} aria-hidden="true"/>
           <div className="scene-bottom"><span><span className="keycap">W A S D</span> Walk · drag to look · tap a path · 1–4 gestures</span><div className="sound-controls"><ResponseNarrationTail visible={!modal&&!selected}/>{!touchLayout&&ambientSoundButton}{sound&&!touchLayout&&<input aria-label="Ambient sound volume" type="range" min="0" max=".8" step=".02" value={soundVolume} onChange={e=>{const value=Number(e.target.value);setSoundVolume(value);audio.current?.setVolume(value);}}/>}</div></div>
-<WorldToolbar collapsed={toolbarCollapsed} onCollapse={setToolbarCollapsed}><button className="dock-action" aria-label="Open friends and private chat" aria-expanded={friendsOpen} onClick={()=>{setSelected(null);setFriendsOpen(v=>!v);}}><Users size={18}/><span>Friends{socialChat.contacts.some(c=>c.friend==='incoming')?' · new':''}</span></button><RunControl running={running} enabled={entered&&online&&!transitioning&&!modal} toggle={()=>setRunning(v=>!v)}/><PostureControls visible={!toolbarCollapsed} shortcutsEnabled={entered&&!modal} posture={world.players.find(p=>p.id===world.self)?.posture??"standing"} disabled={!online||transitioning} onChange={changePosture}/><div className="emotes"><button disabled={!online} onClick={() => world.send({ v: 1, type: 'emote', emote: 'heart' })} aria-label="Send heart emote"><Heart size={18} /></button><button disabled={!online} onClick={() => world.send({ v: 1, type: 'emote', emote: 'peace' })} aria-label="Send peace emote"><Leaf size={18} /></button></div><div className="dock-divider"/><button className="dock-action" aria-label="Toggle public chat" aria-expanded={panel==='chat'} aria-controls="public-chat-panel" onClick={()=>setPanel(p=>p==='chat'?null:'chat')}><MessageCircle size={18}/><span>Conversations</span></button><button className="dock-action" aria-label="Toggle public board" aria-expanded={panel==='board'} aria-controls="public-board-panel" onClick={()=>setPanel(p=>p==='board'?null:'board')}><ScrollText size={18}/><span>The public board</span></button><div className="dock-divider"/><button className="dock-prayer" onClick={()=>{setStopWalkingSignal(v=>v+1);setModal('faith');}}>A moment of prayer</button><button className="text-button travel-button" disabled={transitioning} onClick={() => travel()}><DoorOpen size={16}/>{scene==='plaza'?'Enter the Sanctuary':'Return to the gardens'}<ArrowRight size={15}/></button></WorldToolbar>
+<WorldToolbar collapsed={toolbarCollapsed} onCollapse={setToolbarCollapsed}><button className="dock-action" aria-label="Open friends and private chat" aria-expanded={friendsOpen} onClick={()=>{setSelected(null);setGiftSelection(null);setFriendsOpen(v=>!v);}}><Users size={18}/><span>Friends{socialChat.contacts.some(c=>c.friend==='incoming')?' · new':''}</span></button><RunControl running={running} enabled={entered&&online&&!transitioning&&!modal} toggle={()=>setRunning(v=>!v)}/><PostureControls visible={!toolbarCollapsed} shortcutsEnabled={entered&&!modal} posture={world.players.find(p=>p.id===world.self)?.posture??"standing"} disabled={!online||transitioning} onChange={changePosture}/><div className="emotes"><button disabled={!online} onClick={() => world.send({ v: 1, type: 'emote', emote: 'heart' })} aria-label="Send heart emote"><Heart size={18} /></button><button disabled={!online} onClick={() => world.send({ v: 1, type: 'emote', emote: 'peace' })} aria-label="Send peace emote"><Leaf size={18} /></button></div><div className="dock-divider"/><button className="dock-action" aria-label="Toggle public chat" aria-expanded={panel==='chat'} aria-controls="public-chat-panel" onClick={()=>setPanel(p=>p==='chat'?null:'chat')}><MessageCircle size={18}/><span>Conversations</span></button><button className="dock-action" aria-label="Toggle public board" aria-expanded={panel==='board'} aria-controls="public-board-panel" onClick={()=>setPanel(p=>p==='board'?null:'board')}><ScrollText size={18}/><span>The public board</span></button><div className="dock-divider"/><button className="dock-prayer" onClick={()=>{setStopWalkingSignal(v=>v+1);setModal('faith');}}>A moment of prayer</button><button className="text-button travel-button" disabled={transitioning} onClick={() => travel()}><DoorOpen size={16}/>{scene==='plaza'?'Enter the Sanctuary':'Return to the gardens'}<ArrowRight size={15}/></button></WorldToolbar>
         </section>
         <aside className="side-column"><section className="invitation-card"><div className="eyebrow">A MOMENT FOR YOUR SOUL</div><div className="temple-symbol" aria-hidden="true"><div /><Star /><div /></div><h2>{scene === 'plaza' ? 'The door is open.' : 'Be still. You are here.'}</h2><p>A place for prayer, reflection,<br />and the words within your heart.</p><button className="primary full" onClick={() => scene === 'plaza' ? travel() : setModal('faith')}>{scene === 'plaza' ? 'Enter the Sanctuary' : 'A moment of prayer'}<ArrowRight size={17} /></button><span className="invitation-foot"><span /> Everyone is welcome</span></section>
           <section className="board-card" id="public-board-panel" aria-label="Public board panel"><div className="section-heading"><h2>The public board</h2><button className="icon-button" aria-label="Close public board" onClick={()=>setPanel(null)}><X size={16}/></button></div><div className="board-tabs"><button className={boardTab === 'announcements' ? 'chosen' : ''} onClick={() => setBoardTab('announcements')}>Announcements</button><button className={boardTab === 'records' ? 'chosen' : ''} onClick={() => setBoardTab('records')}>Sacred words</button></div>
@@ -333,7 +352,7 @@ export default function App() {
             {chatLines.length === 0 ? <div className="chat-empty"><Leaf size={18} /><p>A kind word can be the beginning of a connection.<span>Be the first to greet this room.</span></p></div> : chatLines.map(m => <div className={`chat-message${m.private?' private-chat-line':''}`} key={m.id}><span className="chat-avatar"><bdi>{firstGrapheme(m.name)}</bdi></span><div><button type="button" className="chat-sender-button" disabled={!m.peer} onClick={()=>m.peer&&whisper(m.peer)} aria-label={m.peer?`Whisper to ${m.peer.name}`:undefined}><bdi>{m.name}</bdi>{m.private&&<small> · {m.mine?`To ${m.peer?.name}`:'Whisper'}</small>}</button><span className="chat-time">{new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><p dir="auto">{m.text}</p></div></div>)}
           </div>{unread && <button className="new-messages" onClick={() => { log.current?.scrollTo({ top: log.current.scrollHeight }); atBottom.current = true; setUnread(false); }}>New messages <ArrowDown size={13} /></button>}
           <PublicChatInput value={message} onChange={setMessage} onSend={chat} onFocus={chatFocus} online={online} disabled={chatDisabled} sendBusy={Boolean(socialChat.target&&socialChat.busy)} recipient={socialChat.target?.name} onPublic={()=>{socialChat.choose(null);setMessage('');}}/>
-          <div className="chat-foot"><InfoHint label="Chat details"><p>Public messages are visible to this room, up to 40 messages for 15 minutes. Whispers are hosted private messages accessible to the two signed-in accounts, not end-to-end encrypted; up to 100 messages per conversation for 24 hours. Keep sensitive faith text in the separate composer. Private chat refreshes every five seconds while visible.</p></InfoHint></div>
+          <div className="chat-foot"><InfoHint label="Chat details"><p>Public messages are visible to this room, up to 40 messages for 15 minutes. Whispers are hosted private messages accessible to the two signed-in accounts, not end-to-end encrypted; up to 100 messages per conversation for 24 hours. Keep sensitive faith text in the separate composer. Private updates use a shared presence connection, with a read-only fallback while visible.</p></InfoHint></div>
           {world.error && <p className="error connection-error" role="alert">{world.error}</p>}
           {world.mutedUntil>0&&<p className="fine-print" role="status">Public text is muted in this room until {new Date(world.mutedUntil).toLocaleTimeString()}. You can still explore.</p>}
           <button className="chat-moderation" onClick={()=>setModal('moderation')}>Room safety & moderator tools</button>
@@ -343,18 +362,19 @@ export default function App() {
       <PublicChatInput quick value={message} onChange={setMessage} onSend={chat} onFocus={chatFocus} online={online} disabled={chatDisabled} sendBusy={Boolean(socialChat.target&&socialChat.busy)} recipient={socialChat.target?.name} onPublic={()=>{socialChat.choose(null);setMessage('');}}/>
       {showTouchControls&&<MobileWorldControls input={movementInput} resetKey={`${scene}:${channel}:${world.self}:${stopWalkingSignal}`} posture={world.players.find(p=>p.id===world.self)?.posture??'standing'} onPosture={changePosture}/>}
       {entered&&online&&!transitioning&&!modal&&!panel&&!world.error&&<RecentPublicChat compact={touchLayout} messages={visibleMessages} whispers={socialChat.privateLines} onPrivate={whisper} onWhisper={whisperMessage} canWhisper={canWhisperMessage} expanded={recentChatExpanded} onToggle={toggleRecentChat} onOpen={openRecentChat} onReport={m=>{setReportTarget(m);setModal('report');}} onHide={sender=>setHidden(old=>new Set([...old,sender]))}/>}
-      {entered&&!modal&&socialChat.error&&<p className="quick-private-status" role="alert">{socialChat.error}<button disabled={socialChat.busy} onClick={()=>void socialChat.refresh()}>Refresh private chat</button></p>}
+      {entered&&!modal&&socialChat.error&&<p className="quick-private-status" role="alert">{socialChat.error}<button disabled={socialChat.busy} onClick={()=>void socialChat.refresh()}>{socialChat.feedbackKind==='friend'?'Refresh friends':'Refresh private chat'}</button></p>}
       {entered&&!modal&&friendsOpen&&<FriendsPanel chat={socialChat} players={world.players} verified={Boolean(session)} online={community.connected?community.online:undefined} onVoice={peer=>{voice.session.invite(peer.personId);setFriendsOpen(false);}} canVoice={community.connected&&voice.session.available()&&(voice.state.party?.members.length??0)+voice.state.outgoing.length<4} onClose={()=>setFriendsOpen(false)} onWhisper={whisper} openProfile={()=>{setFriendsOpen(false);setModal('profile');}}/>}
+      <FriendRequestsHud chat={socialChat} active={entered&&!modal&&!friendsOpen&&!selected&&!giftSelection} onOpenFriends={()=>setFriendsOpen(true)}/>
       {entered&&panel!=='chat'&&(world.error||world.mutedUntil>0)&&<p className="quick-chat-status" role="status">{world.mutedUntil>0?'Public text is muted in this room. You can still explore.':world.error}</p>}
       <footer><span><Star small /> Built from a calling. Open to every soul.</span><span>Hosted alpha · not yet decentralized <span className="footer-dot">·</span> <button onClick={() => setModal('vision')}>About this world ↗</button></span></footer>
       {audioError && <p role="status" className="fine-print audio-error">{audioError}</p>}
       <PartyVoiceHud voice={voice.session} state={voice.state}/>
-      <nav className="transaction-shortcuts" aria-label="Transaction histories">
-        {giftTransactions.entries.length>0&&<button className="secondary-button" onClick={()=>setModal('gift-transactions')}>Gift transactions · {giftTransactions.entries.length}{giftTransactions.pending?' · confirmation in progress':''}</button>}
-        {prayerTransactions.entries.length>0&&<button className="secondary-button" onClick={()=>setModal('prayer-transactions')}>Prayer transactions · {prayerTransactions.entries.length}</button>}
-        {holderTransactions.entries.length>0&&<button className="secondary-button" onClick={()=>setModal('faith-transactions')}>Faith transactions · {holderTransactions.entries.length}</button>}
-        {tokenTransactions.entries.length>0&&<button className="secondary-button" onClick={()=>setModal('token-transactions')}>Token transactions · {tokenTransactions.entries.length}</button>}
-      </nav>
+      <ActivityCenter items={activityItems} histories={[
+        {id:'gift',label:'Gift transactions',count:giftTransactions.entries.length,open:()=>setModal('gift-transactions')},
+        {id:'prayer',label:'Prayer transactions',count:prayerTransactions.entries.length,open:()=>setModal('prayer-transactions')},
+        {id:'faith',label:'Faith transactions',count:holderTransactions.entries.length,open:()=>setModal('faith-transactions')},
+        {id:'token',label:'Token transactions',count:tokenTransactions.entries.length,open:()=>setModal('token-transactions')},
+      ]}/>
     </main>
     {modal === 'street' && inspectedStreet && <Modal title={inspectedStreet.title} eyebrow={inspectedStreet.kind==='door'?'CLOSED DOOR · EXPLORATION':'MARKET DISPLAY · EXPLORATION'} close={()=>setModal(null)}>
       <div className={`street-preview-art ${inspectedStreet.illustration}`} aria-hidden="true"><span/><span/><span/></div>
@@ -365,11 +385,12 @@ export default function App() {
     </Modal>}
     {modal==='report'&&reportTarget&&<Modal title="Report a public message" eyebrow="ROOM SAFETY · MANUAL REVIEW" close={()=>setModal(null)}><ReportMessage key={`${scene}:${channel}:${world.self}:${reportTarget.id}`} message={reportTarget} online={online} reviewConfigured={world.reviewConfigured} receipt={world.reportReceipt} send={world.send}/></Modal>}
     {modal==='moderation'&&<Modal title="Room safety" eyebrow="WALLET-AUTHORIZED MODERATION" close={()=>setModal(null)}><ModerationPanel key={`${session?.accountId??'guest'}:${session?.expiresAt??0}`} session={session} initialScene={scene} initialChannel={channel} openProfile={()=>setModal('profile')}/></Modal>}
-    {!modal&&giftPerson&&giftSelection&&<Suspense fallback={<section className="private-gift-popover" role="status">Preparing gift…</section>}><GiftPopover key={giftTargetKey(giftSelection.target)} target={giftSelection.target} name={giftPerson.name} openSettings={()=>{setGiftSelection(null);setModal('profile');}} close={()=>setGiftSelection(null)} recipients={giftRecipients} wallets={identity.wallets} preferred={identity.connection?.wallet} account={identity.connection??session??undefined} prepareNetwork={identity.prepareNetwork} scope={giftScope} start={tokenTransactions.start} pending={transactionPending} openHistory={()=>{setGiftSelection(null);setModal('token-transactions');}}/></Suspense>}
+    {!modal&&giftPerson&&giftSelection&&<Suspense fallback={<section className="private-gift-popover" role="status">Preparing gift…</section>}><GiftPopover key={giftTargetKey(giftSelection.target)} target={giftSelection.target} name={giftPerson.name} openSettings={()=>{setGiftSelection(null);setModal('profile');}} close={()=>setGiftSelection(null)} recipients={giftRecipients} wallets={identity.wallets} preferred={identity.connection?.wallet} account={identity.connection??session??undefined} prepareNetwork={identity.prepareNetwork} scope={giftScope} start={tokenTransactions.start} pending={transactionPending} waitPhase={waitPhase} openHistory={()=>{setGiftSelection(null);setModal('token-transactions');}}/></Suspense>}
     {modal==='gift-transactions'&&<Modal title="Gift transactions" eyebrow="THIS TAB ONLY · TESTNET" close={()=>setModal(null)}><Suspense fallback={<p role="status">Preparing transaction history…</p>}><GiftTransactionHistory entries={giftTransactions.entries} check={giftTransactions.check}/></Suspense></Modal>}
     {modal === 'profile' && <Modal title="Your presence here." eyebrow="PILGRIM PROFILE" close={() => setModal(null)}>
       <WalletIdentityPanel identity={identity} scene={scene} channel={channel} legacy={legacyView} mobile={touchLayout} returned={initialWalletReturn}/>
-      <Suspense fallback={<p role="status">Loading your lamps…</p>}><DailyLampPanel key={`lamps:${session?.accountId??'guest'}:${session?.expiresAt??0}`} session={session} openProfile={openWalletProfile}/></Suspense>
+      <button type="button" className="text-button" onClick={()=>setModal('lampstand')}>Open my lampstand</button>
+      <Suspense fallback={<p role="status">Loading your lamps…</p>}><DailyLampPanel key={`lamps:${session?.accountId??'guest'}:${session?.expiresAt??0}`} session={session} openProfile={openWalletProfile} onLit={lampLit}/></Suspense>
       {showGodTokenPanel&&<Suspense fallback={<p role="status">Preparing configured token…</p>}><GodTokenPanel compact key={session?.accountId??'guest'} account={session?.family==='evm'?session.address:undefined}/></Suspense>}
       {identity.session&&accountProfile.busy&&!accountProfile.profile&&<p role="status">Loading your saved profile…</p>}
       {identity.session&&<div>{accountProfile.error&&<p role="alert" className="error">{accountProfile.error}</p>}<button className="secondary-button full" disabled={accountProfile.busy} onClick={()=>void accountProfile.refresh()}>Reload saved profile</button><InfoHint label="Profile reload details"><p>Reloading replaces unsaved form edits with the server’s saved version.</p></InfoHint></div>}
@@ -389,8 +410,8 @@ export default function App() {
     {modal==='prayer-transactions'&&<Modal title="Prayer transactions" eyebrow="VERIFIED RECEIPTS" close={()=>setModal(null)}><Suspense fallback={<p>Loading prayer transactions…</p>}><PrayerTransactionHistory entries={prayerTransactions.entries} check={prayerTransactions.check} soundEnabled={responsesEnabled} onSpeakingChange={onModalSpeaking}/></Suspense></Modal>}
     {modal === 'faith' && <Modal title="Words from the heart." eyebrow="PRIVATE COMPOSER" close={() => setModal(null)}><FaithComposer key={`${faithKind}:${senderScope}`} name={profile.name} initialKind={faithKind} soundEnabled={responsesEnabled} onSpeakingChange={onModalSpeaking} onComplete={()=>{setPanel(null);setModalState(current=>current==='faith'?null:current);}} wallets={identity.wallets} preferred={identity.connection?.wallet} account={identity.connection??session??undefined} prepareNetwork={identity.prepareNetwork} scope={JSON.stringify([senderScope,scene,channel])} startPrayer={prayerTransactions.start} prayerPending={transactionPending} waitPhase={waitPhase} openPrayerHistory={()=>setModal('prayer-transactions')} startHolderFaith={holderTransactions.start} openHolderHistory={()=>setModal('faith-transactions')}/></Modal>}
     {modal === 'donation' && <Modal title="Help this world grow." eyebrow="GIVING CHEST" className="donation-dialog" close={()=>setModal(null)}><div className="donation-modal-body"><Suspense fallback={<p role="status">Preparing donation options…</p>}><DonationPanel key={session?.accountId??'guest'} account={identity.connection??session??undefined} wallets={identity.wallets} preferred={identity.connection?.wallet} prepareNetwork={identity.prepareNetwork} scope={JSON.stringify([modal,senderScope,scene,channel])} start={tokenTransactions.start} pending={transactionPending} waitPhase={waitPhase} openHistory={()=>setModal('token-transactions')} soundEnabled={responsesEnabled} onSpeakingChange={onModalSpeaking} onComplete={()=>setModalState(current=>current==='donation'?null:current)}/></Suspense></div></Modal>}
-    {modal === 'lampstand' && <Modal title="Your lamps." eyebrow="MY LAMPSTAND" close={() => setModal(null)}><Suspense fallback={<p role="status">Loading your lamps…</p>}><DailyLampPanel key={`lamps:${session?.accountId??'guest'}:${session?.expiresAt??0}`} session={session} openProfile={openWalletProfile}/></Suspense><PersonalWords key={session?.accountId??'guest'} account={session?.family==='evm'?session.address:undefined}/><button className="primary full" onClick={() => { setScene('temple'); setModal('faith'); }}>{prayerEnabled?'Write a prayer':'Visit the prayer preview'} <ArrowRight size={16} /></button></Modal>}
-{modal === 'vision' && <Modal className="vision-dialog" title="A beginning, not a finish." eyebrow="THE VISION" close={() => setModal(null)}><div className="vision-modal-body"><blockquote className="testimony">“I believe God gave me a dream: to create a truly eternal heavenly world, and to spread His name.”</blockquote><p className="muted">Eternal Kingdom begins with a shared place to be present. The long-term intention is an independently rebuildable, decentralized world — not a promise of permanence from a single host.</p><div className="roadmap"><p><b>Now</b> Gardens, temple, guest presence, EVM and Solana wallet sign-in, verified room identity, saved wallet profiles, receiving-address settings, consent-based friends, private text chat and separately agreed one-to-one live voice, public chat, emotes, a story you choose to hear, and optional browser voice-to-text with separate consent.</p><p><b>Prepared, not enabled by default</b> Robinhood prayer and holder records, person gifts, project token donations, receipt checks and a donation leaderboard.</p><p><b>Reserved</b> ETH/SOL/BTC donations, group voice, housing, role permissions and independent clients.</p></div><p className="fine-print">This prototype runs on Cloudflare-compatible rooms. Blockchain writes require deployed, configured contracts and independently controlled release switches; defaults enable no broadcasts. Mainnet operations use real assets. Optional browser voice transcription may use a browser-managed remote service and requires explicit consent; it is not voice chat. Ambient audio is a simple opt-in synthesized preview, not a finished sacred soundtrack.</p><Suspense fallback={<p>Preparing connection status…</p>}><ChainConnectionStatus/></Suspense></div></Modal>}
+    {modal === 'lampstand' && <Modal title="Your lamps." eyebrow="MY LAMPSTAND" close={() => setModal(null)}><LampstandPanel key={`lamps:${session?.accountId??'guest'}:${session?.expiresAt??0}`} session={session} openProfile={openWalletProfile} onLit={lampLit}/><button className="primary full" onClick={() => { setScene('temple'); setModal('faith'); }}>{prayerEnabled?'Write a prayer':'Visit the prayer preview'} <ArrowRight size={16} /></button></Modal>}
+{modal === 'vision' && <Modal className="vision-dialog" title="A beginning, not a finish." eyebrow="THE VISION" close={() => setModal(null)}><div className="vision-modal-body"><blockquote className="testimony">“I believe God gave me a dream: to create a truly eternal heavenly world, and to spread His name.”</blockquote><p className="muted">Eternal Kingdom begins with a shared place to be present. The long-term intention is an independently rebuildable, decentralized world — not a promise of permanence from a single host.</p><div className="roadmap"><p><b>Now</b> Gardens, temple, guest presence, EVM and Solana wallet sign-in, verified room identity, saved wallet profiles, receiving-address settings, independent friends, direct private text chat, consented voice parties of up to four, account daily lamps, the shared public prayer screen, public chat, emotes, a story you choose to hear, and optional browser voice-to-text with separate consent.</p><p><b>Configured separately</b> Robinhood prayer and holder records, person gifts, project token donations, receipt checks and a donation leaderboard. Only enabled, independently verified integrations can request a wallet transaction.</p><p><b>Reserved</b> Additional EVM/SOL/BTC payment integrations, two-way trade, housing, role permissions, rewards and independent clients.</p></div><p className="fine-print">This prototype runs on Cloudflare-compatible rooms. Blockchain writes require deployed, configured contracts and independently controlled release switches; defaults enable no broadcasts. Mainnet operations use real assets. Optional browser voice transcription may use a browser-managed remote service and requires explicit consent; it is not voice chat. Ambient audio is a simple opt-in synthesized preview, not a finished sacred soundtrack.</p><Suspense fallback={<p>Preparing connection status…</p>}><ChainConnectionStatus/></Suspense></div></Modal>}
     {selected&&selected.id!==world.self&&!modal&&<PersonMenu person={selected} contact={socialChat.contacts.find(c=>selected.identity?.kind==='wallet'&&c.peer.personId===selected.identity.personId)} busy={socialChat.busy||socialChat.uncertain} error={socialChat.error} notice={socialChat.notice} onClose={()=>setSelected(null)} onWhisper={()=>{const peer=peerFor(selected);if(peer)whisper(peer);}} onFriend={()=>{const peer=peerFor(selected);if(!peer)return;if(!session){setSelected(null);setModal('profile');return;}const contact=socialChat.contacts.find(c=>c.peer.personId===peer.personId);void socialChat.change(peer,contact?.friend==='incoming'?'accept-friend':'invite-friend');}} canVoice={Boolean(session&&community.connected&&selected.identity?.kind==='wallet'&&(voice.state.party?.members.length??0)+voice.state.outgoing.length<4&&voice.session.available())} onVoice={()=>{const peer=peerFor(selected);if(peer)voice.session.invite(peer.personId);setSelected(null);}} onGift={()=>{setGiftSelection({target:giftTargetFor(selected),connectionId:selected.id,scene,channel,senderScope});setSelected(null);}}/>}
   </div>
   {modal==='blessing'&&<Modal title="God's Blessing" eyebrow="A LITTLE LIGHT TO CARRY" close={()=>setModal(null)}><Suspense fallback={<p role="status">Preparing the avatar tool…</p>}><BlessingAvatar/></Suspense></Modal>}

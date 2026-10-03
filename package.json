@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#ek-chain-settings": "./src/settings/chain.json",
+    "#ek-services-settings": "./src/settings/services.json",
+    "#ek-public-faith-seed": "./worker/data/publicFaithSeed.json"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "dev:worker": "wrangler dev --port 8787",

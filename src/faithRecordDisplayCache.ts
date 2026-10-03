@@ -10,7 +10,7 @@ export function rememberSharedRecords(reader:FaithRecordReader,page:FaithFeedPag
     encrypted:r.encrypted,anonymous:r.anonymous,createdAt:r.createdAt,
     transactionHash:r.transactionHash,contract:r.contract,blockNumber:r.blockNumber}));
   recent.set(reader,{page:{status:'available',network:page.network,chainId:page.chainId,from:page.from,to:page.to,
-    olderBefore:page.olderBefore,records,unchecked:page.unchecked,unverified:page.unverified,missing:[...page.missing]},checkedAt:now});
+    olderBefore:page.olderBefore,records,unchecked:page.unchecked,unverified:page.unverified,missing:[...page.missing],...(page.indexing!==undefined?{indexing:page.indexing}:{})},checkedAt:now});
 }
 export function recentSharedRecords(reader:FaithRecordReader,now=Date.now()){
   const entry=recent.get(reader);

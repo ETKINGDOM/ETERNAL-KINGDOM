@@ -1,9 +1,11 @@
+import {releaseObjectKey} from './releaseScope';
 import { z } from 'zod';
 import { AUTH_SESSION_TTL, walletAccountSchema } from '../shared/identity';
 import { profileMutationSchema, profileReadSchema } from '../shared/profile';
 import {roomAdmissionSchema} from '../shared/roomIdentity';
 import {routingHash as hash,sessionToken} from './sessionRouting';
 import {socialRequest} from './social';
+import {FRIEND_REMINDER_HEADER} from '../shared/social';
 import {moderationRequest} from './moderation';
 import {giftRecipientRequestSchema} from '../shared/gifts';
 import {lampRequestSchema} from '../shared/dailyLamp';
@@ -37,15 +39,15 @@ export async function authRequest(request:Request,env:Env):Promise<Response>{
   if(!profileRoute&&!roomRoute&&!socialRoute&&!moderationRoute&&!giftReadRoute&&!lampRoute&&!communityRoute&&!['/api/auth/challenge','/api/auth/verify','/api/auth/session','/api/auth/logout'].includes(path))return json({error:'Not found'},404);
   const secure=new URL(origin).protocol==='https:',cookieName=secure?'__Host-ek-session':'ek-local-session';
   if(!secure&&!['localhost','127.0.0.1'].includes(new URL(origin).hostname))return json({error:'HTTPS is required'},403);
-  const limiter=env.WALLET_SESSIONS.getByName(`rate:${await hash(request.headers.get('CF-Connecting-IP')??'local')}`);
+  const limiter=env.WALLET_SESSIONS.getByName(releaseObjectKey(`rate:${await hash(request.headers.get('CF-Connecting-IP')??'local')}`));
   if(!await limiter.allow(120))return json({error:'Please wait before trying again'},429);
   let body:unknown;try{body=await boundedJson(request);}catch{return json({error:'Invalid request'},400);}
   if(giftReadRoute){
     const parsed=giftRecipientRequestSchema.safeParse(body);if(!parsed.success)return json({error:'Invalid recipient request'},400);
-    const giftLimiter=env.WALLET_SESSIONS.getByName(`gift-rate:${await hash(request.headers.get('CF-Connecting-IP')??'local')}`);
+    const giftLimiter=env.WALLET_SESSIONS.getByName(releaseObjectKey(`gift-rate:${await hash(request.headers.get('CF-Connecting-IP')??'local')}`));
     if(!await giftLimiter.allow(30))return json({error:'Please wait before checking another recipient'},429);
     if(parsed.data.target.kind==='guest')return json({recipient:{status:'unconfigured'}});
-    using recipient=await env.WORLD_ROOMS.getByName(`${parsed.data.scene}:${parsed.data.channel}`).giftRecipient(parsed.data);
+    using recipient=await env.WORLD_ROOMS.getByName(releaseObjectKey(`${parsed.data.scene}:${parsed.data.channel}`)).giftRecipient(parsed.data);
     return json({recipient});
   }
   const token=sessionToken(request);
@@ -53,11 +55,11 @@ export async function authRequest(request:Request,env:Env):Promise<Response>{
   if(path==='/api/auth/challenge'){
     const parsed=beginSchema.safeParse(body);if(!parsed.success)return json({error:'Invalid wallet account or network'},400);
     const nextToken=token??Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
-    const result=await env.WALLET_SESSIONS.getByName(`browser:${await hash(nextToken)}`).challenge(origin,parsed.data);
+    const result=await env.WALLET_SESSIONS.getByName(releaseObjectKey(`browser:${await hash(nextToken)}`)).challenge(origin,parsed.data);
     return result?json(result,200,cookie(nextToken,AUTH_SESSION_TTL/1000)):json({error:'Please wait before requesting another login'},429);
   }
   if(!token)return path==='/api/auth/verify'||profileRoute||roomRoute||socialRoute||moderationRoute||lampRoute||communityRoute?json({error:'Please verify your wallet.'},401):json({session:null},200,path.endsWith('logout')?cookie('',0):undefined);
-  const store=env.WALLET_SESSIONS.getByName(`browser:${await hash(token)}`);
+  const store=env.WALLET_SESSIONS.getByName(releaseObjectKey(`browser:${await hash(token)}`));
   if(path==='/api/auth/logout'){await store.logout();return json({session:null},200,cookie('',0));}
   if(path==='/api/auth/session')return json({session:await store.current(origin)});
   if(communityRoute){
@@ -68,12 +70,12 @@ export async function authRequest(request:Request,env:Env):Promise<Response>{
     const session=await store.current(origin);if(!session)return json({error:'Please verify your wallet.'},401);
     const input=lampRequestSchema.safeParse(body);if(!input.success)return json({error:'Invalid lamp request.'},400);
     if(input.data.accountId!==session.accountId||input.data.sessionExpiresAt!==session.expiresAt)return json({error:'Wallet session changed.'},403);
-    const profile=env.ACCOUNT_PROFILES.getByName(await hash(session.accountId));
+    const profile=env.ACCOUNT_PROFILES.getByName(releaseObjectKey(await hash(session.accountId)));
     const lamp=path.endsWith('/light')?await profile.lightLamp(session.accountId):await profile.readLamp(session.accountId);
     return json({lamp});
   }
   if(moderationRoute){const session=await store.current(origin);return session?moderationRequest(body,session,env):json({error:'Please verify your wallet.'},401);}
-  if(socialRoute){const session=await store.current(origin);return session?socialRequest(body,session,env):json({error:'Please verify your wallet.'},401);}
+  if(socialRoute){const session=await store.current(origin);return session?socialRequest(body,session,env,request.headers.get(FRIEND_REMINDER_HEADER)==='1'):json({error:'Please verify your wallet.'},401);}
   if(roomRoute){
     const parsed=roomAdmissionSchema.safeParse(body);if(!parsed.success)return json({error:'Invalid room request'},400);
     const ticket=await store.roomTicket(origin,parsed.data);
@@ -85,12 +87,12 @@ export async function authRequest(request:Request,env:Env):Promise<Response>{
       const parsed=profileReadSchema.safeParse(body);if(!parsed.success)return json({error:'Invalid profile request'},400);
       // The body is a stale-tab guard, never an authorization source.
       if(parsed.data.accountId!==session.accountId)return json({error:'Wallet session changed'},403);
-      const profile=await env.ACCOUNT_PROFILES.getByName(await hash(session.accountId)).readProfile(session.accountId);
+      const profile=await env.ACCOUNT_PROFILES.getByName(releaseObjectKey(await hash(session.accountId))).readProfile(session.accountId);
       return json({profile});
     }
     const parsed=profileMutationSchema.safeParse(body);if(!parsed.success)return json({error:'Invalid profile change or missing confirmation'},400);
     if(parsed.data.accountId!==session.accountId)return json({error:'Wallet session changed'},403);
-    const result=await env.ACCOUNT_PROFILES.getByName(await hash(session.accountId)).saveProfile(parsed.data);
+    const result=await env.ACCOUNT_PROFILES.getByName(releaseObjectKey(await hash(session.accountId))).saveProfile(parsed.data);
     if(result.status==='conflict')return json({error:'Profile changed. Reload before saving.'},409);
     if(result.status==='rate-limited')return json({error:'Please wait before saving again'},429);
     return json({profile:result.profile});

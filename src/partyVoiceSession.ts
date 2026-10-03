@@ -1,6 +1,8 @@
 import {PARTY_LEASE,type CommunityClient,type CommunityServer,type PartyInvitation,type PartyView} from '../shared/community';
 import {browserVoiceMedia,type VoiceMediaPorts} from './voiceSession';
 export type PartyVoiceSnapshot={self:string;party:PartyView|null;invitations:PartyInvitation[];outgoing:{id:string;peer:{personId:string;name:string;family:'evm'|'solana'}}[];microphone:'off'|'requesting'|'on';muted:boolean;connected:string[];error:string;playbackBlocked:boolean};
+export const VOICE_AWAY_NOTICE='Voice stopped while the page was away.';
+export const VOICE_NOTICE_DURATION=15_000;
 type Edge={pc:RTCPeerConnection;audio?:HTMLAudioElement;sent:boolean;receiving:boolean;epoch:number};
 const empty=():PartyVoiceSnapshot=>({self:'',party:null,invitations:[],outgoing:[],microphone:'off',muted:false,connected:[],error:'',playbackBlocked:false});
 // At most three audio-only peers. Connectivity/SFU can be replaced without
@@ -15,6 +17,13 @@ export class PartyVoiceSession{
   private clean(){this.generation++;this.closeEdges();this.stream?.getTracks().forEach(t=>{t.onended=null;t.stop();});this.stream=undefined;this.consent=false;this.inviting=false;}
   reset(){this.clean();this.patch(empty());}
   leave(error=''){const id=this.state.party?.id;this.clean();this.patch({...empty(),self:this.state.self,error});if(id)this.send({v:1,type:'party-control',partyId:id,action:'leave'});}
+  away(){
+    const speaking=this.state.microphone!=='off'||Boolean(this.stream)||this.state.connected.length>0;
+    if(!speaking&&!this.state.party&&!this.state.invitations.length&&!this.state.outgoing.length&&!this.inviting&&!this.consent)return;
+    // Pending invitations still end on departure, but an idle visitor has no
+    // interrupted call to report. Duplicate lifecycle events are harmless.
+    this.leave(speaking?VOICE_AWAY_NOTICE:'');
+  }
   invite(peer:string){if(this.inviting||!this.available())return;this.inviting=true;this.consent=true;this.patch({error:''});if(!this.send({v:1,type:'party-invite',peer})){this.inviting=false;this.consent=false;this.patch({error:'Voice connection unavailable. Try again when connected.'});}}
   answer(id:string,accept:boolean){if(accept)this.consent=true;if(!this.send({v:1,type:'party-answer',invitationId:id,accept})){this.consent=false;this.patch({error:'Voice connection unavailable.'});}}
   receive(packet:CommunityServer){
@@ -26,6 +35,7 @@ export class PartyVoiceSession{
       else if(previous&&previous.revision!==next?.revision){this.closeEdges();this.patch({connected:[]});}
       this.inviting=false;this.lastState=this.now();this.patch({party:next,invitations:packet.invitations,outgoing:packet.outgoing});
       if(!next)return;
+      if(next.members.length<2&&(this.stream||this.state.microphone==='requesting')){this.clean();this.patch({microphone:'off',muted:false,connected:[],playbackBlocked:false});return;}
       if(this.consent&&next.members.length>1&&this.state.microphone==='off'){this.consent=false;void this.enableMicrophone();}
       else if(this.stream)void this.reconcile();return;
     }
@@ -62,11 +72,16 @@ export class PartyVoiceSession{
     if(!this.send({v:1,type:'party-signal',partyId:party.id,revision:party.revision,peer,description:{type:d.type as 'offer'|'answer',sdp:d.sdp}}))this.leave('Voice setup connection interrupted.');
   }
   private async description(peer:string,description:RTCSessionDescriptionInit){
+    const epoch=this.edgeEpoch;
     let edge:Edge|undefined;try{edge=await this.edge(peer);if(!edge||edge.receiving)return;edge.receiving=true;await edge.pc.setRemoteDescription(description);if(edge.epoch!==this.edgeEpoch)return;
       if(description.type==='offer'){edge.sent=true;await edge.pc.setLocalDescription(await edge.pc.createAnswer());await this.sendDescription(peer,edge);}
-    }catch{if(!edge||edge.epoch===this.edgeEpoch)this.leave('Voice setup failed. Your microphone is off.');}
+    }catch{if(epoch===this.edgeEpoch)this.leave('Voice setup failed. Your microphone is off.');}
   }
   mute(){const muted=!this.state.muted;this.stream?.getAudioTracks().forEach(t=>t.enabled=!muted);this.patch({muted});if(this.state.party)this.send({v:1,type:'party-control',partyId:this.state.party.id,action:'mute',muted});}
-  dismissNotice(){this.patch({error:''});}
-  async resumeAudio(){try{await Promise.all([...this.edges.values()].map(e=>e.audio?.play()));this.patch({playbackBlocked:false});}catch{this.patch({playbackBlocked:true});}}
+  dismissNotice(expected?:string){if(expected!==undefined&&this.state.error!==expected)return;this.patch({error:''});}
+  async resumeAudio(){
+    const epoch=this.edgeEpoch;
+    try{await Promise.all([...this.edges.values()].map(e=>e.audio?.play()));if(epoch===this.edgeEpoch)this.patch({playbackBlocked:false});}
+    catch{if(epoch===this.edgeEpoch)this.patch({playbackBlocked:true});}
+  }
 }

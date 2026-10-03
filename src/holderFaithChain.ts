@@ -1,3 +1,4 @@
+import {rpcFetchOptions,type RpcFetch} from '../shared/rpcFetch';
 import {createPublicClient,http,keccak256,decodeEventLog,TransactionNotFoundError,TransactionReceiptNotFoundError,type Address,type Hash,type Hex} from 'viem';
 import type {ChainSettings} from '../shared/chainConfiguration';
 import {holderFaithAbi,holderFaithPayloadSchema,type HolderFaithPayload} from '../shared/holderFaithRecords';
@@ -17,10 +18,10 @@ export interface HolderFaithRpcPort extends HolderFaithReadPort{
   head():Promise<bigint>;blockHash(number:bigint):Promise<Hash|null>;
   stored(proof:HolderFaithEvidence,blockNumber:bigint):Promise<readonly [Address,bigint,number,Hex]>;
 }
-export function holderFaithRpc(url:string,signal:AbortSignal):HolderFaithRpcPort{
-  const client=createPublicClient({ccipRead:false,transport:http(url,{retryCount:0,timeout:8000,maxResponseBodySize:262144,fetchOptions:{signal,credentials:'omit',referrerPolicy:'no-referrer'}})});
+export function holderFaithRpc(url:string,signal:AbortSignal,fetchFn?:RpcFetch):HolderFaithRpcPort{
+  const client=createPublicClient({ccipRead:false,transport:http(url,{retryCount:0,timeout:8000,maxResponseBodySize:262144,fetchOptions:rpcFetchOptions(signal),fetchFn})});
   const args=(p:HolderFaithProof)=>({address:p.contract,abi:holderFaithAbi,functionName:'recordFaith' as const,args:[p.kindCode,p.bytes] as const,account:p.payer});
-  return {...holderFaithReadPort(url,signal),simulate:async p=>(await client.simulateContract(args(p))).result,gas:p=>client.estimateContractGas(args(p)),
+  return {...holderFaithReadPort(url,signal,fetchFn),simulate:async p=>(await client.simulateContract(args(p))).result,gas:p=>client.estimateContractGas(args(p)),
     async receipt(hash){try{const r=await client.getTransactionReceipt({hash});return {hash:r.transactionHash,blockHash:r.blockHash,blockNumber:r.blockNumber,status:r.status,logs:r.logs};}catch(e){if(e instanceof TransactionReceiptNotFoundError)return null;throw e;}},
     async transaction(hash){try{const t=await client.getTransaction({hash});return {hash:t.hash,chainId:t.chainId,from:t.from,to:t.to,input:t.input,value:t.value,blockHash:t.blockHash};}catch(e){if(e instanceof TransactionNotFoundError)return null;throw e;}},
     head:()=>client.getBlockNumber({cacheTime:0}),blockHash:async blockNumber=>(await client.getBlock({blockNumber})).hash,

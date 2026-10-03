@@ -1,3 +1,4 @@
+import {releaseObjectKey} from './releaseScope';
 import { DurableObject } from 'cloudflare:workers';
 import { getAddress, hexToBytes, verifyMessage, type Hex } from 'viem';
 import { createSiweMessage } from 'viem/siwe';
@@ -123,9 +124,9 @@ export class WalletSessionStore extends DurableObject<Env>{
   private async revokeRooms(){
     const registry=this.read<{key:string;rooms:string[]}>('room-registry');
     // Keep the registry until expiry, so a failed logout can retry revocation.
-    if(registry)await Promise.all(registry.rooms.map(room=>this.env.WORLD_ROOMS.getByName(room).revalidateSession(registry.key)));
+    if(registry)await Promise.all(registry.rooms.map(room=>this.env.WORLD_ROOMS.getByName(releaseObjectKey(room)).revalidateSession(registry.key)));
     const community=this.read<string>('community-registry');
-    if(community)await this.env.COMMUNITY.getByName('global-v1').revalidateSession(community);
+    if(community)await this.env.COMMUNITY.getByName(releaseObjectKey('global-v1')).revalidateSession(community);
   }
   async logout(){
     this.remove('session');this.remove('challenge');this.remove('room-tickets');this.remove('community-tickets');this.write('revision',crypto.randomUUID());

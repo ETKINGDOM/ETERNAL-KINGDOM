@@ -1,7 +1,8 @@
 import {isScene,type Scene} from '../shared/scenes';
 import {z} from 'zod';
+import {releaseStorageKey} from './releaseScope';
 
-export const WORLD_VISIT_KEY='ek:world-visit:v1',WORLD_VISIT_TTL=30*60_000;
+export const WORLD_VISIT_KEY=releaseStorageKey('ek:world-visit:v1'),WORLD_VISIT_TTL=30*60_000;
 type Store=Pick<Storage,'getItem'|'setItem'>;
 const schema=z.object({version:z.literal(1),scene:z.string().refine(isScene),channel:z.number().int().min(1).max(3),legacy:z.boolean(),expiresAt:z.number().int().positive()}).strict();
 export type WorldVisit={scene:Scene;channel:number;legacy:boolean};

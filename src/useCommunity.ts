@@ -1,3 +1,4 @@
+import {releaseHeaders,releaseSocketUrl} from './releaseScope';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {z} from 'zod';
 import type {WalletSession} from '../shared/identity';
@@ -18,10 +19,10 @@ export function useCommunity(session:WalletSession|null,enabled:boolean){
     async function connect(){
       if(!session||!enabled||disposed||session.expiresAt<=Date.now())return;
       try{
-        const response=await fetch('/api/auth/community-ticket',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountId:session.accountId,sessionExpiresAt:session.expiresAt}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(10_000)])});
+        const response=await fetch('/api/auth/community-ticket',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',...releaseHeaders()},body:JSON.stringify({accountId:session.accountId,sessionExpiresAt:session.expiresAt}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(10_000)])});
         if(!response.ok)throw Error('Unavailable');const proof=ticketSchema.parse(await response.json());
         if(disposed||scope!==current.current||proof.expiresAt<=Date.now())return;
-        const ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/api/community`,[COMMUNITY_PROTOCOL,`ticket.${proof.ticket}`]);socket.current=ws;connectedScope.current=scope;
+        const ws=new WebSocket(releaseSocketUrl(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/api/community`),[COMMUNITY_PROTOCOL,`ticket.${proof.ticket}`]);socket.current=ws;connectedScope.current=scope;
         ws.onmessage=event=>{
           if(disposed||socket.current!==ws||typeof event.data!=='string'||event.data.length>30_000)return;
           let input:unknown;try{input=JSON.parse(event.data);}catch{return;}const result=communityServerSchema.safeParse(input);if(!result.success)return;const p=result.data;

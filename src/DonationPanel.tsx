@@ -3,6 +3,8 @@ import {chainBroadcast,configuredGodToken} from '../shared/chainConfiguration';
 import {GOD_TOKEN_NAME} from '../shared/godTokenPresentation';
 import {projectChainSettings} from './projectChainSettings';
 import {useGodToken} from './useGodToken';
+import {useGodBalance} from './useGodBalance';
+import {prepareGodTokenDonation} from './godTokenService';
 import type {WalletChoice} from './walletIdentity';
 import type {StartNativeTokenAttempt} from './useNativeTokenTransactions';
 import RitualFeedback from './RitualFeedback';
@@ -20,6 +22,13 @@ const showToken=projectChainSettings.status==='invalid'||Boolean(configuredGodTo
 export default function DonationPanel({account,wallets,preferred,prepareNetwork,scope,start,pending,waitPhase=null,openHistory,soundEnabled,onSpeakingChange,onComplete}:{account?:WalletAccountIdentity;wallets:WalletChoice[];preferred?:WalletChoice;prepareNetwork?:PrepareWalletNetwork;scope:string;start:StartNativeTokenAttempt;pending:boolean;waitPhase?:TransactionWaitPhase|null;openHistory:()=>void;soundEnabled:boolean;onSpeakingChange:(playing:boolean)=>void;onComplete?:()=>void}){
   const [tab,setTab]=useState<'give'|'view'>('give');
   const [amount,setAmount]=useState('');const godToken=useGodToken();
+  const evmAccount=account?.family==='evm'?account.address:undefined;
+  const balance=useGodBalance(godToken.token,evmAccount,scope);
+  let transfer:ReturnType<typeof prepareGodTokenDonation>|null=null;
+  try{if(amount&&godToken.token)transfer=prepareGodTokenDonation(projectChainSettings,godToken.token,amount);}catch{/* Invalid input never reaches the wallet. */}
+  const insufficient=Boolean(transfer&&balance.balance&&transfer.amount>balance.balance.units);
+  const selfDonation=Boolean(transfer&&evmAccount&&transfer.recipient.toLowerCase()===evmAccount.toLowerCase());
+  const payable=Boolean(transfer&&balance.status==='available'&&!insufficient&&!selfDonation);
   const feedback=useRef<RitualFeedbackPort>(null);
   function confirmed(id:string){if(!id.trim())return;feedback.current?.complete({kind:'donation',state:'confirmed',confirmationId:id});onComplete?.();}
   const broadcast=chainBroadcast(projectChainSettings,'donations');
@@ -29,8 +38,12 @@ export default function DonationPanel({account,wallets,preferred,prepareNetwork,
       <p className="fine-print">God token donations use an EVM receiving address and are listed separately from general EVM donations. BTC and SOL have independent addresses. Donations do not purchase forgiveness or spiritual status.</p>
       <p>{broadcast?'Donations use the configured network. Opening this panel does not request a payment.':'In-app payments are not enabled. Opening this panel does not request a payment.'} View donations shows only verified incoming transfers when the ranking source is configured.</p></InfoHint>
       <PublicDonationAddresses/>
-      {showToken&&<Suspense fallback={<p role="status">Preparing configured token…</p>}><GodTokenPanel compact account={account?.family==='evm'?account.address:undefined}/></Suspense>}
-      {godToken.token?<><label className="field-label">Donation amount · {GOD_TOKEN_NAME}<input type="text" inputMode="decimal" autoComplete="off" maxLength={116} value={amount} disabled={pending} onChange={e=>{setAmount(e.target.value);feedback.current?.clear();}} placeholder="e.g. 1"/></label><Suspense fallback={<p role="status">Preparing wallet options…</p>}><NativeTokenSubmission token={godToken.token} amount={amount} destination={{kind:'donation'}} wallets={wallets} preferred={preferred} account={account} prepareNetwork={prepareNetwork} scope={scope} start={start} pending={pending} waitPhase={waitPhase} openHistory={openHistory} onConfirmed={confirmed}/></Suspense><RitualFeedback ref={feedback} soundEnabled={soundEnabled} onSpeakingChange={onSpeakingChange}/></>:<button className="primary full" disabled>In-app donations coming later</button>}</>:
+      {showToken&&<Suspense fallback={<p role="status">Preparing configured token…</p>}><GodTokenPanel compact account={evmAccount} balanceState={balance} refreshDisabled={pending}/></Suspense>}
+      {godToken.token?<><label className="field-label">Donation amount · {GOD_TOKEN_NAME}<input type="text" inputMode="decimal" autoComplete="off" maxLength={116} value={amount} disabled={pending} onChange={e=>{setAmount(e.target.value);feedback.current?.clear();}} placeholder="e.g. 1"/></label>
+        {amount&&!transfer&&<p role="status">Enter a positive amount within the token’s precision.</p>}
+        {insufficient&&<p role="status">Insufficient God balance.</p>}
+        {selfDonation&&<p role="status">This is your own receiving address. No donation will be requested.</p>}
+        <Suspense fallback={<p role="status">Preparing wallet options…</p>}><NativeTokenSubmission token={godToken.token} amount={payable?amount:''} destination={{kind:'donation'}} wallets={wallets} preferred={preferred} account={account} prepareNetwork={prepareNetwork} scope={scope} start={start} pending={pending} waitPhase={waitPhase} openHistory={openHistory} onConfirmed={confirmed}/></Suspense><RitualFeedback ref={feedback} soundEnabled={soundEnabled} onSpeakingChange={onSpeakingChange}/></>:<button className="primary full" disabled>In-app donations coming later</button>}</>:
       <Suspense fallback={<p role="status">Preparing donation ranking…</p>}><DonationLeaderboard/></Suspense>}
   </section>;
 }

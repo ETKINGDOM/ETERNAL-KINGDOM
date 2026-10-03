@@ -2,6 +2,8 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Hash} from 'viem';
 import type {PrayerProof,PrayerReceipt} from './prayerChain';
 import {admitTransaction,isUnresolvedTransaction,beginReceiptCheck,finishReceiptCheck,disposeTransactionChecks,scheduleReceiptRecheck,notifyReceiptOnce} from './transactionLedger';
+import {notifyConfiguredFaithTransaction} from './databaseFaithReader';
+import {projectChainSettings} from './projectChainSettings';
 
 export type PrayerAttempt={id:string;status:'preparing'|'not-submitted'|'pending'|'cancelled'|'unconfirmed'|PrayerReceipt['status'];hash?:Hash;
   network?:string;chainId?:number;contract?:string;payer?:string;recordId?:string;checking:boolean};
@@ -19,7 +21,7 @@ export function usePrayerTransactions(){
     try{const {prayerRpc,verifyPrayerReceipt}=await import('./prayerChain');signal.throwIfAborted();item.entry.status=(await verifyPrayerReceipt(prayerRpc(item.proof.rpcUrl,signal),item.proof,item.entry.hash,signal)).status;}
     catch{if(!controller.signal.aborted)item.entry.status='unknown';}
     finally{finishReceiptCheck(item,controller);publish();}
-    notifyReceiptOnce(item,alive.current,()=>item.confirmed?.(item.proof!.recordId));
+    notifyReceiptOnce(item,alive.current,()=>{notifyConfiguredFaithTransaction(projectChainSettings,item.proof!,item.entry.hash!);item.confirmed?.(item.proof!.recordId);});
     // Bounded receipt reads, never retry a transaction or poll indefinitely.
     scheduleReceiptRecheck(item,alive.current,()=>void check(id));
   },[publish]);
@@ -29,7 +31,7 @@ export function usePrayerTransactions(){
     ledger.current.set(item.entry.id,item);publish();
     const prepared=(p:PrayerProof)=>{item.proof=p;Object.assign(item.entry,{network:p.network,chainId:p.chainId,contract:p.contract,payer:p.payer,recordId:p.recordId});publish();};
     let outcome:PrayerOutcome;
-    try{const result=await work(prepared);if(!/^0x[0-9a-fA-F]{64}$/.test(result.hash))throw Error('Submission is uncertain. Check your wallet before resending.');prepared(result.proof);item.entry.hash=result.hash;outcome='pending';}
+    try{const result=await work(prepared);if(!/^0x[0-9a-fA-F]{64}$/.test(result.hash))throw Error('Submission is uncertain. Check your wallet before resending.');prepared(result.proof);item.entry.hash=result.hash;notifyConfiguredFaithTransaction(projectChainSettings,result.proof,result.hash);outcome='pending';}
     catch(e){outcome=e instanceof Error&&e.message==='You cancelled the wallet confirmation.'?'cancelled':e instanceof Error&&e.message==='Submission is uncertain. Check your wallet before resending.'?'unconfirmed':'not-submitted';}
     item.entry.status=outcome;publish();if(item.entry.hash&&alive.current)void check(item.entry.id);return outcome;
   },[publish,check]);

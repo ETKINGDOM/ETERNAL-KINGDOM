@@ -7,6 +7,6 @@ export function usePartyVoice(channel:CommunityChannel,scope:string){
   useEffect(()=>channel.subscribe(p=>session.receive(p)),[session,channel.subscribe]);
   useEffect(()=>{session.reset();return()=>session.leave();},[scope,session]);
   useEffect(()=>{if(!channel.connected)session.reset();},[channel.connected,session]);
-  useEffect(()=>{const tick=setInterval(()=>session.tick(),4000),hide=()=>session.leave('Voice stopped while the page was away.');const visibility=()=>{if(document.visibilityState==='hidden')hide();};window.addEventListener('pagehide',hide);document.addEventListener('visibilitychange',visibility);return()=>{clearInterval(tick);window.removeEventListener('pagehide',hide);document.removeEventListener('visibilitychange',visibility);session.leave();};},[session]);
+  useEffect(()=>{const tick=setInterval(()=>session.tick(),4000),hide=()=>session.away();const visibility=()=>{if(document.visibilityState==='hidden')hide();};window.addEventListener('pagehide',hide);document.addEventListener('visibilitychange',visibility);return()=>{clearInterval(tick);window.removeEventListener('pagehide',hide);document.removeEventListener('visibilitychange',visibility);session.leave();};},[session]);
   return {session,state};
 }

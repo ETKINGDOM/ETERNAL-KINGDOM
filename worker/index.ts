@@ -1,3 +1,4 @@
+import {releaseObjectKey} from './releaseScope';
 import { DurableObject } from 'cloudflare:workers';
 import { clientPacketSchema, type Player, type ServerPacket, type ChatMessage } from '../shared/protocol';
 import { canTravel, CHAT_LIMIT, CHAT_TTL, COLORS, ROOM_CAPACITY, spawnPosition, type Scene } from '../shared/world';
@@ -13,11 +14,18 @@ import {giftRecipientRequestSchema,giftRecipientResultSchema,giftTargetFor,giftT
 import {RoomVoice} from './RoomVoice';
 import type {VoiceConsent} from '../shared/voice';
 import {socialPairKey} from '../shared/social';
+import {projectDataScope} from './releaseScope';
+import {projectChainSettings} from '../src/projectChainSettings';
+import {matchesReleaseRequest} from '../shared/releaseScope';
+import {isShowcase} from '../shared/chainConfiguration';
+const showcase=isShowcase(projectChainSettings);
 export { WalletSessionStore } from './WalletSession';
 export { AccountProfileStore } from './AccountProfile';
 export { SocialInbox } from './SocialInbox';
 export { SocialPair } from './SocialPair';
 export { CommunityHub } from './CommunityHub';
+export { FaithIndex } from './FaithIndex';
+export { PublicFaithDatabase } from './PublicFaithDatabase';
 
 type RoomAuth={key:string;generation:string;origin:string;expiresAt:number;profileKey:string};
 type Attachment = { player: Player; scene: Scene; lastMove: number; lastChat: number; lastEmote: number; lastProfile: number; window: number; count: number; ip: string; active?:boolean; auth?:RoomAuth;voice?:VoiceConsent;lastVoiceInvite?:number };
@@ -40,23 +48,34 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     try {
-      if (url.pathname === '/api/capabilities' && request.method === 'GET') return json({ version: 1, stage: 'local-alpha', capabilities:{...capabilities,roomModeration:moderatorAccounts(env.MODERATOR_ACCOUNTS).length?'available':'unconfigured'} });
-      if (url.pathname === '/api/health') return json({ ok: true, version: 1 });
+      if (url.pathname === '/api/capabilities' && request.method === 'GET') return json({ version: 1, stage: showcase?'showcase':'local-alpha', capabilities:showcase?Object.fromEntries(Object.keys(capabilities).map(k=>[k,k==='world'||k==='narration'?'available':'paused'])):{...capabilities,roomModeration:moderatorAccounts(env.MODERATOR_ACCOUNTS).length?'available':'unconfigured'} });
+      if (url.pathname === '/api/health') return json({ ok: projectChainSettings.status==='valid', version: 1,release:projectDataScope,mode:showcase?'showcase':'alpha' });
+      if(url.pathname.startsWith('/api/')&&projectChainSettings.status!=='valid')return json({error:'Release configuration unavailable.'},503);
+      if(url.pathname.startsWith('/api/')&&projectChainSettings.status==='valid'&&!matchesReleaseRequest(request,projectChainSettings.config))return json({error:'This release changed. Refresh the website.'},409);
+      if(showcase&&url.pathname.startsWith('/api/')&&!parseRoomPath(url.pathname))return json({error:'Explore and listen. Account and transaction features are paused.'},423);
       if(url.pathname.startsWith('/api/auth/')){
         if(!allowedOrigin(request))return json({error:'Origin not allowed'},403);
         return await authRequest(request,env);
       }
       const match = parseRoomPath(url.pathname);
+      if(url.pathname==='/api/faith-feed'){
+        if(!allowedOrigin(request))return json({error:'Origin not allowed'},403);
+        return await env.FAITH_INDEX.getByName(releaseObjectKey('public-v1')).fetch(request);
+      }
+      if(url.pathname==='/api/public-faith'||url.pathname==='/api/public-faith/sync'){
+        if(!allowedOrigin(request))return json({error:'Origin not allowed'},403);
+        return await env.PUBLIC_FAITH_DB.getByName(releaseObjectKey('public-v1')).fetch(request);
+      }
       if(url.pathname==='/api/community'){
         if(request.method!=='GET'||request.headers.get('Upgrade')?.toLowerCase()!=='websocket')return json({error:'WebSocket required'},426);
         if(!allowedOrigin(request))return json({error:'Origin not allowed'},403);
-        return await env.COMMUNITY.getByName('global-v1').fetch(request);
+        return await env.COMMUNITY.getByName(releaseObjectKey('global-v1')).fetch(request);
       }
       if (match) {
         if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
         if (!allowedOrigin(request)) return json({ error: 'Origin not allowed' }, 403);
         if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') return json({ error: 'WebSocket required' }, 426);
-        return await env.WORLD_ROOMS.getByName(`${match.scene}:${match.channel}`).fetch(request);
+        return await env.WORLD_ROOMS.getByName(releaseObjectKey(`${match.scene}:${match.channel}`)).fetch(request);
       }
       // A hidden UI is not a security boundary: all unfinished APIs stay closed.
       if (url.pathname.startsWith('/api/')) return json({ error: 'This capability is not enabled in the alpha' }, 404);
@@ -89,7 +108,7 @@ export class WorldRoom extends DurableObject<Env> {
         const first=find(a),second=find(b);if(!first||!second)return false;
         for(const ws of [first,second]){const auth=this.state(ws).auth;if(!auth||!await this.authenticated(ws,auth))return false;}
         const x=this.state(first).player.identity,y=this.state(second).player.identity;
-        return x?.kind==='wallet'&&y?.kind==='wallet'&&await this.env.SOCIAL_PAIRS.getByName(socialPairKey(x.personId,y.personId)).voiceAllowed(x.personId,y.personId);
+        return x?.kind==='wallet'&&y?.kind==='wallet'&&await this.env.SOCIAL_PAIRS.getByName(releaseObjectKey(socialPairKey(x.personId,y.personId))).voiceAllowed(x.personId,y.personId);
       },
     });
     this.ctx.blockConcurrencyWhile(async () => {
@@ -134,7 +153,7 @@ export class WorldRoom extends DurableObject<Env> {
   private expireSessions(){for(const ws of this.sockets()){const auth=this.state(ws).auth;if(auth&&auth.expiresAt<=Date.now())this.removePresence(ws,'Wallet session expired');}}
   private async authenticated(ws:WebSocket,auth:RoomAuth){
     let current=false;
-    try{current=await this.env.WALLET_SESSIONS.getByName(auth.key).presenceCurrent(auth.origin,auth.generation);}catch{/* Fail closed, never log private routing state. */}
+    try{current=await this.env.WALLET_SESSIONS.getByName(releaseObjectKey(auth.key)).presenceCurrent(auth.origin,auth.generation);}catch{/* Fail closed, never log private routing state. */}
     if(!current||auth.expiresAt<=Date.now()){this.removePresence(ws,'Wallet identity changed');return false;}
     return ws.readyState===WebSocket.OPEN&&this.state(ws).auth?.generation===auth.generation;
   }
@@ -158,7 +177,7 @@ export class WorldRoom extends DurableObject<Env> {
     const matches=(ws:WebSocket)=>{const state=this.state(ws);return state.active&&state.scene===request.scene&&state.player.id===request.connectionId&&giftTargetKey(giftTargetFor(state.player))===giftTargetKey(request.target);};
     const peer=this.visibleSockets().find(matches);if(!peer)return {status:'unpublished'};
     const auth=this.state(peer).auth;if(!auth||!await this.authenticated(peer,auth)||!matches(peer))return {status:'unpublished'};
-    using recipient=await this.env.ACCOUNT_PROFILES.getByName(auth.profileKey).publishedRecipient(request.target);
+    using recipient=await this.env.ACCOUNT_PROFILES.getByName(releaseObjectKey(auth.profileKey)).publishedRecipient(request.target);
     // Read-time snapshot, never a transfer authorization. Departure/logout may
     // interleave with the RPC; reject rather than bind to another connection.
     if(peer.readyState!==WebSocket.OPEN||!matches(peer)||this.state(peer).auth?.generation!==auth.generation||auth.expiresAt<=Date.now())return {status:'unpublished'};
@@ -183,14 +202,15 @@ export class WorldRoom extends DurableObject<Env> {
     this.expireSessions();
     let auth:RoomAuth|undefined,identity:Player['identity']={kind:'guest'},appearance={name:'Pilgrim',color:COLORS[0] as typeof COLORS[number]};
     const protocols=request.headers.get('Sec-WebSocket-Protocol')?.split(',').map(p=>p.trim());
+    if(showcase&&protocols)return json({error:'Guest visits only during showcase.'},423);
     if(protocols){
       if(protocols.length!==2||protocols[0]!==ROOM_PROTOCOL||!/^ticket\.[0-9a-f]{64}$/.test(protocols[1]))return json({error:'Invalid room identity'},401);
       const key=await sessionRoutingKey(request);if(!key)return json({error:'Wallet session required'},401);
       const origin=request.headers.get('Origin')!;
-      const proof=await this.env.WALLET_SESSIONS.getByName(key).consumeRoomTicket(origin,protocols[1].slice(7),new URL(request.url).pathname,key);
+      const proof=await this.env.WALLET_SESSIONS.getByName(releaseObjectKey(key)).consumeRoomTicket(origin,protocols[1].slice(7),new URL(request.url).pathname,key);
       if(!proof)return json({error:'Room ticket expired or already used'},401);
       const profileKey=await routingHash(proof.session.accountId);
-      const saved=await this.env.ACCOUNT_PROFILES.getByName(profileKey).roomProfile();
+      const saved=await this.env.ACCOUNT_PROFILES.getByName(releaseObjectKey(profileKey)).roomProfile();
       appearance=saved.appearance;identity={kind:'wallet',personId:saved.personId,family:proof.session.family};
       auth={key,generation:proof.generation,origin,expiresAt:proof.session.expiresAt,profileKey};
     }
@@ -212,7 +232,7 @@ export class WorldRoom extends DurableObject<Env> {
     if(pair[1].readyState!==WebSocket.OPEN)return json({error:'Room connection closed'},401);
     const admitted=this.state(pair[1]);admitted.active=true;pair[1].serializeAttachment(admitted);
     this.cleanHistory();
-    const history = this.ctx.storage.sql.exec<ChatRow>('SELECT id, sender, name, text, time FROM chat WHERE id NOT IN (SELECT id FROM chat_hidden) ORDER BY time ASC, rowid ASC').toArray();
+    const history = showcase?[]:this.ctx.storage.sql.exec<ChatRow>('SELECT id, sender, name, text, time FROM chat WHERE id NOT IN (SELECT id FROM chat_hidden) ORDER BY time ASC, rowid ASC').toArray();
     this.send(pair[1], { v: 1, type: 'welcome', self: id, players: this.visibleSockets().map(ws => this.state(ws).player), history,reviewConfigured:moderatorAccounts(this.env.MODERATOR_ACCOUNTS).length>0,mutedUntil:this.safety.mutedUntil(this.subject(player)) });
     this.broadcast({ v: 1, type: 'player', player }, pair[1]);
     return new Response(null, { status: 101, webSocket: pair[0],...(auth?{headers:{'Sec-WebSocket-Protocol':ROOM_PROTOCOL}}:{}) });
@@ -233,6 +253,11 @@ export class WorldRoom extends DurableObject<Env> {
     const parsed = clientPacketSchema.safeParse(input);
     if (!parsed.success) { this.send(ws, { v: 1, type: 'error', message: 'Unsupported or invalid message' }); return; }
     const packet = parsed.data;
+    // Enforce view/listen-only at the socket too, not just at the UI. Profile
+    // handshake is accepted only for the fixed anonymous visitor appearance.
+    if(showcase&&!(packet.type==='ping'||packet.type==='move'||packet.type==='posture'||packet.type==='emote'||packet.type==='profile'&&packet.name==='Pilgrim'&&packet.color===COLORS[0])){
+      this.send(ws,{v:1,type:'error',message:'Explore and listen. Interaction features are paused.'});return;
+    }
     if(packet.type==='voice-invite'||packet.type==='voice-control'||packet.type==='voice-signal'){
       await this.voice.handle(state.player.id,packet);await this.scheduleExpiry();return;
     }
@@ -255,7 +280,7 @@ export class WorldRoom extends DurableObject<Env> {
       if(now-state.lastProfile<1000)return;
       state.lastProfile=now;ws.serializeAttachment(state);
       let saved;
-      try{saved=await this.env.ACCOUNT_PROFILES.getByName(state.auth.profileKey).roomProfile();}catch{this.send(ws,{v:1,type:'error',message:'Saved appearance is unavailable. Try again shortly.'});return;}
+      try{saved=await this.env.ACCOUNT_PROFILES.getByName(releaseObjectKey(state.auth.profileKey)).roomProfile();}catch{this.send(ws,{v:1,type:'error',message:'Saved appearance is unavailable. Try again shortly.'});return;}
       state=this.state(ws);if(!state.active||ws.readyState!==WebSocket.OPEN)return;
       state.player.name=saved.appearance.name;state.player.color=saved.appearance.color;
       ws.serializeAttachment(state);this.broadcast({v:1,type:'player',player:state.player});return;

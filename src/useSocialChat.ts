@@ -8,8 +8,8 @@ import type {CommunityChannel} from './useCommunity';
 
 type Cache=ConversationCache;
 type Pending={peerId:string;clientId:string;text:string};
-type State={scope:string;self:string;contacts:Contact[];conversations:Cache;busy:boolean;error:string;uncertain:boolean;notice:string;ack:Pending|null};
-const blank=(scope:string):State=>({scope,self:'',contacts:[],conversations:{},busy:false,error:'',uncertain:false,notice:'',ack:null});
+type State={scope:string;self:string;contacts:Contact[];conversations:Cache;busy:boolean;error:string;uncertain:boolean;notice:string;feedbackKind:'friend'|'chat';ack:Pending|null};
+const blank=(scope:string):State=>({scope,self:'',contacts:[],conversations:{},busy:false,error:'',uncertain:false,notice:'',feedbackKind:'chat',ack:null});
 
 /** One account-scoped private channel for both the bottom bar and friends UI.
  * Text stays in memory; no public-room packet, local storage or telemetry. */
@@ -44,7 +44,7 @@ export function useSocialChat(session:WalletSession|null,enabled:boolean,scene:S
       if(confirmed)pending.current=null;
       setRaw(old=>({...old,scope:c.scope,self:snap.self,contacts,conversations:next,error:'',uncertain:false,ack:confirmed?p:old.ack}));
       lastRead.current=Date.now();notifications.current?.send({v:1,type:'community-watch'});
-    }catch{if(valid(id,c.scope))setRaw(old=>({...old,error:'Could not refresh private chat. Check your connection.',uncertain:Boolean(pending.current)||old.uncertain}));}
+    }catch{if(valid(id,c.scope))setRaw(old=>({...old,error:old.feedbackKind==='friend'?'Could not refresh friends. Check your connection.':'Could not refresh private chat. Check your connection.',uncertain:Boolean(pending.current)||old.uncertain}));}
     finally{if(valid(id,c.scope)){reading.current=false;if(queued.current){queued.current=false;queueMicrotask(()=>void refresh());}}}
   },[]);
   useEffect(()=>{
@@ -56,6 +56,11 @@ export function useSocialChat(session:WalletSession|null,enabled:boolean,scene:S
   },[scope,enabled,refresh]);
   useEffect(()=>community?.subscribe(packet=>{if(packet.type==='social-changed'){if(locked.current||reading.current)queued.current=true;else void refresh();}}),[community?.subscribe,refresh]);
   useEffect(()=>{void refresh();},[target?.personId,refresh]);
+  useEffect(()=>{
+    if(!state.notice)return;
+    const notice=state.notice,timer=setTimeout(()=>setRaw(old=>old.scope===scope&&old.notice===notice?{...old,notice:''}:old),6000);
+    return()=>clearTimeout(timer);
+  },[state.notice,scope]);
   const choose=useCallback((peer:SocialPeer|null)=>{setTarget(peer);},[]);
   async function change(peer:SocialPeer,action:SocialAction|'message',text=''){
     const c=current.current;if(!c.enabled||!c.session||c.session.expiresAt<=Date.now()||locked.current||state.uncertain||raw.scope!==scope)return false;
@@ -65,14 +70,14 @@ export function useSocialChat(session:WalletSession|null,enabled:boolean,scene:S
     const base={accountId:c.session.accountId,sessionExpiresAt:c.session.expiresAt,peerId:peer.personId,expectedRevision:previous?.revision??0,scene:c.scene,channel:c.channel};
     const p:Pending=pending.current?.peerId===peer.personId&&pending.current.text===text.trim()?pending.current:{peerId:peer.personId,clientId:crypto.randomUUID(),text:text.trim()};
     if(action==='message')pending.current=p;
-    setRaw(old=>({...old,busy:true,error:'',notice:''}));
+    setRaw(old=>({...old,busy:true,error:'',notice:'',feedbackKind:action.endsWith('friend')?'friend':'chat'}));
     try{
-      const result=await hostedSocial.change(action==='message'?{...base,kind:'message',clientId:p.clientId,text:p.text}:{...base,kind:'action',action},control.signal);
+      const result=await hostedSocial.change(action==='message'?{...base,kind:'message',clientId:p.clientId,text:p.text}:{...base,kind:'action',action,...(action==='invite-friend'?{expectedFriendRequestRevision:previous?.friendRequestRevision??0}:{})},control.signal);
       if(!valid(id,c.scope))return false;
       cache.current={...cache.current,[peer.personId]:result};
       if(action==='message')pending.current=null;
       notifications.current?.send({v:1,type:'community-watch'});
-      setRaw(old=>({...old,contacts:[result.contact,...old.contacts.filter(x=>x.peer.personId!==peer.personId)],conversations:cache.current,busy:false,error:'',uncertain:false,ack:action==='message'?p:old.ack,notice:action==='invite-friend'?'Friend request sent.':action==='accept-friend'?'Friend added.':action==='remove-friend'?'Friend removed.':''}));
+      setRaw(old=>({...old,contacts:[result.contact,...old.contacts.filter(x=>x.peer.personId!==peer.personId)],conversations:cache.current,busy:false,error:'',uncertain:false,ack:action==='message'?p:old.ack,notice:action==='invite-friend'?(result.contact.friend==='friends'?'Already friends.':'Friend request sent. Waiting for acceptance.'):action==='accept-friend'?'Friend added.':action==='remove-friend'?'Friend removed.':action==='decline-friend'?'Friend request declined.':action==='cancel-friend'?'Friend request cancelled.':''}));
       return true;
     }catch(error){if(valid(id,c.scope)){
       const rejected=error instanceof SocialRejection;if(rejected&&action==='message')pending.current=null;

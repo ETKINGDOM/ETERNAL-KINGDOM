@@ -2,7 +2,7 @@ import {useEffect,useState} from 'react';
 import {X} from 'lucide-react';
 import {useRitualLight} from './ResponseNarration';
 import {ritualPresentation} from './ritualFeedbackState';
-import {RITUAL_CONFIRMED_DURATION} from './ritualLight';
+import {RITUAL_CONFIRMED_DURATION,DAILY_LAMP_LIGHT_DURATION} from './ritualLight';
 import InfoHint from './InfoHint';
 
 // A small private encouragement in the world, never submitted words/addresses.
@@ -12,10 +12,15 @@ export default function WorldRitualResponse({visible,openPublicScreen}:{visible:
   const [dismissed,setDismissed]=useState(0),[expired,setExpired]=useState(0);
   useEffect(()=>{
     if(!cue||cue.startedAt===null)return;
-    const timer=setTimeout(()=>setExpired(cue.id),Math.max(0,RITUAL_CONFIRMED_DURATION-(performance.now()-cue.startedAt)));
+    const duration=cue.state==='daily-lamp'?DAILY_LAMP_LIGHT_DURATION:RITUAL_CONFIRMED_DURATION;
+    const timer=setTimeout(()=>setExpired(cue.id),Math.max(0,duration-(performance.now()-cue.startedAt)));
     return()=>clearTimeout(timer);
   },[cue]);
-  if(!visible||!cue||cue.startedAt===null||cue.state!=='confirmed'||cue.id===dismissed||cue.id===expired)return null;
+  if(!visible||!cue||cue.startedAt===null||cue.state==='local-preview'||cue.id===dismissed||cue.id===expired)return null;
+  if(cue.state==='daily-lamp')return <section className="world-ritual-response" aria-label="Daily lamp response" data-response-kind="lamp" data-response-state="daily-lamp">
+    <div><span className="eyebrow">A LITTLE LIGHT FOR THIS DAY</span><button className="icon-button" type="button" aria-label="Dismiss encouragement" onClick={()=>setDismissed(cue.id)}><X size={14}/></button></div>
+    <blockquote aria-live="polite">Today’s lamp is lit.</blockquote>
+  </section>;
   // This ID references the already-verified local cue, not a blockchain proof.
   const event={kind:cue.kind,state:'confirmed' as const,confirmationId:`verified-cue:${cue.id}`};
   const presentation=ritualPresentation(event);if(!presentation)return null;

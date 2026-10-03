@@ -1,3 +1,4 @@
+import {releaseHeaders} from './releaseScope';
 import { getAddress, stringToHex } from 'viem';
 import { parseSiweMessage } from 'viem/siwe';
 import { AUTH_STATEMENT, walletSessionSchema, type WalletAccountIdentity, type IdentitySessionAdapter } from '../shared/identity';
@@ -47,7 +48,8 @@ export function evmWallet(id:string,name:string,provider:InjectedWalletProvider)
   };
 }
 async function post(path:string,body:unknown={}):Promise<unknown>{
-  const response=await fetch(`/api/auth/${path}`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(10_000)});
+  const options={method:'POST',credentials:'same-origin' as const,headers:{'Content-Type':'application/json',...releaseHeaders()},body:JSON.stringify(body),signal:AbortSignal.timeout(10_000)};
+  const response=await fetch(`/api/auth/${path}`,options);
   if(!response.ok)throw new Error(response.status===429?'rate-limited':'auth-unavailable');
   return response.json();
 }

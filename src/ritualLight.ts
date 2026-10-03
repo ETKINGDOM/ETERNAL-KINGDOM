@@ -3,10 +3,11 @@ import type {RitualKind} from './content/ritualResponses';
 
 // Client-only encouragement, never a public event or proof of divine acceptance.
 // Carries no words, wallet, receipt/hash, name, amount or encryption material.
-export type RitualLightCue={id:number;kind:RitualKind;state:'local-preview'|'confirmed';startedAt:number|null};
+export type RitualLightCue={id:number;startedAt:number|null}&({kind:RitualKind;state:'local-preview'|'confirmed'}|{kind:'lamp';state:'daily-lamp'});
 export interface RitualLightPort {show(owner:string,event:RitualFeedbackEvent,defer?:boolean):void;clear(owner?:string):void}
 export const RITUAL_LIGHT_DURATION=6000;
 export const RITUAL_CONFIRMED_DURATION=18_000;
+export const DAILY_LAMP_LIGHT_DURATION=10_000;
 export class RitualLightStore implements RitualLightPort {
   private cue:RitualLightCue|null=null;
   private owner:string|null=null;
@@ -22,8 +23,12 @@ export class RitualLightStore implements RitualLightPort {
     this.owner=owner;
     this.cue={id:++this.sequence,kind:event.kind,state:event.state,startedAt:defer&&event.state==='confirmed'?null:startedAt};this.notify();
   }
+  // An account check-in is not an onchain faith record. Keep its cue distinct.
+  showDailyLamp(owner:string){
+    this.owner=owner;this.cue={id:++this.sequence,kind:'lamp',state:'daily-lamp',startedAt:null};this.notify();
+  }
   activate(id:number){
-    if(this.cue?.id!==id||this.cue.state!=='confirmed'||this.cue.startedAt!==null)return false;
+    if(this.cue?.id!==id||this.cue.state==='local-preview'||this.cue.startedAt!==null)return false;
     const startedAt=this.clock();if(!Number.isFinite(startedAt))return false;
     this.cue={...this.cue,startedAt};this.notify();return true;
   }
@@ -36,13 +41,14 @@ export class RitualLightStore implements RitualLightPort {
 export function ritualLightStrength(cue:RitualLightCue|null|undefined,now:number,reducedMotion:boolean){
   if(!cue||cue.startedAt===null||!Number.isFinite(now)||!Number.isFinite(cue.startedAt))return 0;
   const age=now-cue.startedAt;
-  if(cue.state==='confirmed'){
-    if(age<0||age>=RITUAL_CONFIRMED_DURATION)return 0;
+  if(cue.state==='confirmed'||cue.state==='daily-lamp'){
+    const duration=cue.state==='daily-lamp'?DAILY_LAMP_LIGHT_DURATION:RITUAL_CONFIRMED_DURATION;
+    if(age<0||age>=duration)return 0;
     // Accessibility keeps a visible, static halo rather than hiding completion.
     if(reducedMotion)return .75;
     // Visible as soon as the confirmed card appears; no flashing/pulse loop.
     const rise=.65+.35*Math.min(1,age/400);
-    const fade=Math.min(1,(RITUAL_CONFIRMED_DURATION-age)/3000);
+    const fade=Math.min(1,(duration-age)/3000);
     return rise*fade;
   }
   if(reducedMotion||age<=0||age>=RITUAL_LIGHT_DURATION)return 0;

@@ -1,4 +1,4 @@
-import raw from './settings/chain.json';
+import raw from '#ek-chain-settings' with {type:'json'};
 import { resolveChainSettings } from '../shared/chainConfiguration';
 
 // Project-owned configuration, not player-controlled localStorage or URL input.

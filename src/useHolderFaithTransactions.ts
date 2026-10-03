@@ -3,6 +3,8 @@ import type {Hash} from 'viem';
 import type {HolderFaithKind} from '../shared/holderFaithRecords';
 import type {HolderFaithProof,HolderFaithReceipt} from './holderFaithChain';
 import {admitTransaction,isUnresolvedTransaction,beginReceiptCheck,finishReceiptCheck,disposeTransactionChecks,scheduleReceiptRecheck,notifyReceiptOnce} from './transactionLedger';
+import {notifyConfiguredFaithTransaction} from './databaseFaithReader';
+import {projectChainSettings} from './projectChainSettings';
 
 export type HolderFaithAttempt={id:string;status:'preparing'|'not-submitted'|'cancelled'|'unconfirmed'|'insufficient'|HolderFaithReceipt['status'];kind?:HolderFaithKind;hash?:Hash;
   network?:string;chainId?:number;contract?:string;payer?:string;recordId?:string;checking:boolean};
@@ -20,7 +22,7 @@ export function useHolderFaithTransactions(){
     try{const {holderFaithRpc,verifyHolderFaithReceipt}=await import('./holderFaithChain');signal.throwIfAborted();item.entry.status=(await verifyHolderFaithReceipt(holderFaithRpc(item.proof.rpcUrl,signal),item.proof,item.entry.hash,signal)).status;}
     catch{if(!controller.signal.aborted)item.entry.status='unknown';}
     finally{finishReceiptCheck(item,controller);publish();}
-    notifyReceiptOnce(item,alive.current,()=>item.confirmed?.(item.proof!.recordId));
+    notifyReceiptOnce(item,alive.current,()=>{notifyConfiguredFaithTransaction(projectChainSettings,item.proof!,item.entry.hash!);item.confirmed?.(item.proof!.recordId);});
     scheduleReceiptRecheck(item,alive.current,()=>void check(id));
   },[publish]);
   const start=useCallback<StartHolderFaithAttempt>(async(work,confirmed)=>{
@@ -29,7 +31,7 @@ export function useHolderFaithTransactions(){
     ledger.current.set(item.entry.id,item);publish();
     const prepared=(p:HolderFaithProof)=>{item.proof=p;Object.assign(item.entry,{kind:p.kind,network:p.network,chainId:p.chainId,contract:p.contract,payer:p.payer,recordId:p.recordId});publish();};
     let outcome:HolderFaithOutcome;
-    try{const result=await work(prepared);if(!/^0x[0-9a-fA-F]{64}$/.test(result.hash))throw Error('Submission is uncertain. Check your wallet before resending.');prepared(result.proof);item.entry.hash=result.hash;outcome='pending';}
+    try{const result=await work(prepared);if(!/^0x[0-9a-fA-F]{64}$/.test(result.hash))throw Error('Submission is uncertain. Check your wallet before resending.');prepared(result.proof);item.entry.hash=result.hash;notifyConfiguredFaithTransaction(projectChainSettings,result.proof,result.hash);outcome='pending';}
     catch(e){outcome=e instanceof Error&&e.message==='You cancelled the wallet confirmation.'?'cancelled':e instanceof Error&&e.message==='At least 1 whole God token is required for confession and praise.'?'insufficient':e instanceof Error&&e.message==='Submission is uncertain. Check your wallet before resending.'?'unconfirmed':'not-submitted';}
     item.entry.status=outcome;publish();if(item.entry.hash&&alive.current)void check(item.entry.id);return outcome;
   },[publish,check]);

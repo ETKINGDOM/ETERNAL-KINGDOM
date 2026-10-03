@@ -6,7 +6,7 @@ import {hostedDailyLamps} from './dailyLampStorage';
 import InfoHint from './InfoHint';
 import './dailyLamp.css';
 
-export default function DailyLampPanel({session,openProfile,adapter=hostedDailyLamps}:{session:WalletSession|null;openProfile:()=>void;adapter?:DailyLampAdapter}){
+export default function DailyLampPanel({session,openProfile,onLit,adapter=hostedDailyLamps}:{session:WalletSession|null;openProfile:()=>void;onLit?:()=>void;adapter?:DailyLampAdapter}){
   const scope=session?`${session.accountId}:${session.expiresAt}`:'';
   const current=useRef(scope);current.current=scope;
   const serial=useRef(0),abort=useRef<AbortController|null>(null),locked=useRef(false);
@@ -21,7 +21,9 @@ export default function DailyLampPanel({session,openProfile,adapter=hostedDailyL
       const input={accountId:session.accountId,sessionExpiresAt:session.expiresAt};
       const next=await (light?adapter.light(input,controller.signal):adapter.read(input,controller.signal));
       if(current.current!==key||serial.current!==turn)return;
-      setState({scope:key,lamp:next,busy:false,uncertain:false,error:'',glow:light&&next.total>(lamp?.total??0)});
+      const newlyLit=light&&next.total>(lamp?.total??0);
+      setState({scope:key,lamp:next,busy:false,uncertain:false,error:'',glow:newlyLit});
+      if(newlyLit){try{onLit?.();}catch{/* Presentation cannot undo a saved lamp. */}}
     }catch{
       if(current.current===key&&serial.current===turn)setState(old=>({...old,busy:false,uncertain:true,error:light?'Could not confirm. Check your lamp before trying again.':'Your lamps could not be loaded.',glow:false}));
     }finally{if(current.current===key&&serial.current===turn)locked.current=false;}

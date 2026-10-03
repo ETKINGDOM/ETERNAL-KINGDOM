@@ -3,10 +3,13 @@ import {accountIdSchema} from './profile';
 import {nameSchema} from './protocol';
 import {SCENES} from './scenes';
 
-export const PRIVATE_TTL=24*60*60_000,PRIVATE_LIMIT=100,INVITE_TTL=7*PRIVATE_TTL,CONTACT_LIMIT=100;
+// Bounds apply to the recent directory / message window, not the number of
+// different people an account can ever message. Friendship is independent.
+export const PRIVATE_TTL=24*60*60_000,PRIVATE_LIMIT=100,INVITE_TTL=7*PRIVATE_TTL,FRIEND_LIMIT=100,CONTACT_LIMIT=200;
+export const FRIEND_REMINDER_HEADER='X-EK-Friend-Reminders';
 export const socialPeerSchema=z.object({personId:z.string().uuid(),name:nameSchema,family:z.enum(['evm','solana'])}).strict();
 export type SocialPeer=z.infer<typeof socialPeerSchema>;
-export const contactSchema=z.object({peer:socialPeerSchema,revision:z.number().int().nonnegative(),friend:z.enum(['none','incoming','outgoing','friends']),chat:z.enum(['closed','incoming','outgoing','open']),blocked:z.boolean(),available:z.boolean(),updatedAt:z.number()}).strict();
+export const contactSchema=z.object({peer:socialPeerSchema,revision:z.number().int().nonnegative(),friend:z.enum(['none','incoming','outgoing','friends']),friendRequestRevision:z.number().int().nonnegative().optional(),chat:z.enum(['closed','incoming','outgoing','open']),blocked:z.boolean(),available:z.boolean(),updatedAt:z.number()}).strict();
 export type Contact=z.infer<typeof contactSchema>;
 export const privateMessageSchema=z.object({id:z.string().uuid(),clientId:z.string().uuid(),sender:z.string().uuid(),text:z.string().max(400),time:z.number()}).strict();
 export type PrivateMessage=z.infer<typeof privateMessageSchema>;
@@ -20,7 +23,7 @@ const guard={accountId:accountIdSchema,sessionExpiresAt:z.number().int().positiv
 const target={peerId:z.string().uuid(),expectedRevision:z.number().int().nonnegative()};
 export const socialRequestSchema=z.discriminatedUnion('kind',[
   z.object({...guard,kind:z.literal('snapshot'),peerId:z.string().uuid().optional()}).strict(),
-  z.object({...guard,...target,kind:z.literal('action'),action:socialActionSchema,scene:z.enum(SCENES),channel:z.number().int().min(1).max(3)}).strict(),
+  z.object({...guard,...target,kind:z.literal('action'),action:socialActionSchema,expectedFriendRequestRevision:z.number().int().nonnegative().optional(),scene:z.enum(SCENES),channel:z.number().int().min(1).max(3)}).strict(),
   z.object({...guard,...target,kind:z.literal('message'),clientId:z.string().uuid(),text:z.string().trim().min(1).max(400).regex(/^[^\u0000-\u0008\u000b\u000c\u000e-\u001f]*$/u),scene:z.enum(SCENES).optional(),channel:z.number().int().min(1).max(3).optional()}).strict(),
 ]);
 export type SocialRequest=z.infer<typeof socialRequestSchema>;

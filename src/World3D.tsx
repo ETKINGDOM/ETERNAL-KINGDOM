@@ -34,7 +34,7 @@ export default function World3D(props:WorldRendererProps){
   const canvas=useRef<HTMLCanvasElement>(null);const current=useRef(props);current.current=props;
   const [state,setState]=useState<'loading'|'ready'|'error'>('loading');
   const [firstPerson,setFirstPerson]=useState(false);const first=useRef(firstPerson);first.current=firstPerson;
-  useEffect(()=>{if(props.ritualLightCue?.state==='confirmed'&&props.ritualLightCue.startedAt===null)setFirstPerson(false);},[props.ritualLightCue?.id]);
+  useEffect(()=>{if(props.ritualLightCue&&props.ritualLightCue.state!=='local-preview'&&props.ritualLightCue.startedAt===null)setFirstPerson(false);},[props.ritualLightCue?.id]);
   const reset=useRef(()=>{});
   const bubbleElements=useRef<BubbleElements>(new Map());
   const doorHint=useRef<HTMLButtonElement>(null);const walkToDoor=useRef(()=>{});
@@ -245,7 +245,7 @@ export default function World3D(props:WorldRendererProps){
       el.dataset.ritualLightStrength=encouragement.toFixed(3);
       el.dataset.ritualLightTarget=encouragement>0?'self':'';
       const selfModel=figures.get(state.self);
-      const confirmed=state.ritualLightCue?.state==='confirmed';
+      const confirmed=state.ritualLightCue?.state==='confirmed'||state.ritualLightCue?.state==='daily-lamp';
       el.dataset.personalRobeGlow=String(Boolean(selfModel&&selfModel.setEncouragement(encouragement,confirmed)>0));
       if(architecture.lightColumn){
         architecture.lightColumn.setEncouragement(encouragement);
