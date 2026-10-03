@@ -1,0 +1,37 @@
+/* A slim dock with a single small entry when folded. Chat stays independent. */
+.immersive .world-toolbar--compact {
+  width:max-content;max-width:calc(100% - 24px);height:auto;min-height:44px;
+  left:50%;transform:translateX(-50%);padding:1px 6px;gap:6px;
+  flex-wrap:nowrap;justify-content:center;border-radius:9px;
+  background:#172c42bc;box-shadow:0 4px 16px #10233626;
+}
+.world-toolbar-actions {display:flex;align-items:center;gap:10px;min-width:0}
+.world-toolbar-actions[hidden] {display:none}
+.immersive .world-toolbar--compact .dock-action {min-height:40px;padding:4px;gap:6px}
+.immersive .world-toolbar--compact .dock-divider {height:19px}
+.immersive .world-toolbar--compact .emotes button {width:32px;min-height:40px;height:40px;border-radius:6px}
+.immersive .world-toolbar--compact .dock-prayer {min-height:40px;padding:4px 8px}
+.immersive .world-toolbar--compact .travel-button {min-height:40px;padding:4px 6px;width:auto;justify-content:center}
+.toolbar-toggle {display:flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;min-width:40px;min-height:40px;padding:4px 8px;color:#f0d9a5;border-radius:6px}
+.toolbar-toggle:hover {background:#e7dcb31c}
+.toolbar-toggle span {font-size:11px}
+.immersive .world-toolbar--compact[data-collapsed=true] {width:max-content;min-height:44px;padding:1px 5px}
+.immersive .world-toolbar--compact .posture-menu {bottom:48px}
+@media(max-width:700px),(pointer:coarse) {
+  .immersive .world-toolbar--compact {min-height:48px;padding:1px 4px;gap:3px}
+  .world-toolbar-actions {gap:2px;flex-wrap:wrap;justify-content:center}
+  .immersive .world-toolbar--compact .dock-action,
+  .immersive .world-toolbar--compact .dock-prayer,
+  .immersive .world-toolbar--compact .travel-button,
+  .immersive .world-toolbar--compact .emotes button,
+  .toolbar-toggle {min-width:44px;min-height:44px}
+  .immersive .world-toolbar--compact .emotes {display:flex;gap:0}
+  .immersive .world-toolbar--compact .emotes button {width:44px;height:44px}
+  .immersive .world-toolbar--compact[data-collapsed=true] {min-height:48px}
+}
+@media(max-width:700px) {
+  .immersive .world-toolbar--compact:not([data-collapsed=true]) {width:calc(100% - 24px)}
+  .world-toolbar-actions {flex:1}
+  .immersive .world-toolbar--compact .posture-controls {position:static}
+  .immersive .world-toolbar--compact .posture-menu {left:8px;bottom:calc(100% + 8px)}
+}

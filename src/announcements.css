@@ -1,0 +1,12 @@
+.announcement-controls { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 21px 8px; color:#ead8b6; font-size:12px; }
+.announcement-controls button { min-height:36px; flex-shrink:0; }
+.announcement-source,.announcement-status { padding:0 21px 16px; color:#b8c8d4; font-size:11px; line-height:1.7; }
+.announcements .board-entry { overflow-wrap:anywhere; }
+.announcements .board-entry time { display:block; font-size:10px; color:#aebdca; margin-top:9px; }
+.announcements .announcement-body { white-space:pre-wrap; }
+.announcements button:disabled { opacity:.6; cursor:default; }
+.announcement-proof{margin:8px 21px 18px;padding:12px;border:1px solid rgba(212,181,112,.4);border-radius:10px;background:rgba(9,29,43,.5);overflow-wrap:anywhere;}
+.announcement-proof>span{display:block;color:#ead6a1;font-size:12px;}
+.announcement-proof code{display:block;margin:8px 0;color:#e0e8ea;font-size:11px;white-space:normal;overflow-wrap:anywhere;}
+.announcement-proof small,.announcement-proof p{font-size:10px;color:#b8c8d4;line-height:1.6;}
+.announcement-proof p{margin:8px 0 0;}

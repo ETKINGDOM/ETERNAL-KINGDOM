@@ -1,0 +1,26 @@
+.sacred-records{padding:10px 16px 16px;min-width:0;color:#cbd6dc;overflow-wrap:anywhere;font-size:12px;line-height:1.6}
+.sacred-filters{display:flex;gap:3px;min-width:0;border-bottom:1px solid #c7ac702b}
+.sacred-filters button{flex:1;min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;padding:5px 3px;background:none;color:#b4c4ce;font:inherit;font-size:11px;white-space:nowrap;cursor:pointer}
+.sacred-filters button[aria-pressed=true]{color:#f4d38b;border-bottom-color:#d7b870}
+.sacred-records button:focus-visible,.sacred-details summary:focus-visible{outline:2px solid #edce8d;outline-offset:1px;border-radius:4px}
+.sacred-records button:disabled{opacity:.5;cursor:default}
+.sacred-toolbar{display:flex;align-items:center;gap:2px;min-height:44px}
+.sacred-loading{flex:1;min-width:0;font-size:11px;color:#aebfca}
+.sacred-refresh{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;min-height:44px;border:0;background:transparent;color:#d8c18b;cursor:pointer}
+.sacred-toolbar .info-hint{flex-shrink:0}
+.sacred-toolbar .info-hint-button{width:44px;min-height:44px}
+.sacred-toolbar .info-hint-content{bottom:auto;top:100%;left:auto;right:0;width:min(290px,calc(100vw - 64px));z-index:15}
+.sacred-entry{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr);gap:3px 8px;margin:0;padding:12px 36px 12px 0;border-bottom:1px solid #c7ac702b;min-width:0}
+.sacred-entry .entry-type{color:#d9bd7c;font-size:11px;line-height:1.7;letter-spacing:0;text-transform:none}
+.sacred-name{color:#eee5d3;font-size:13px;font-weight:600;min-width:0;align-self:start}
+.sacred-words{grid-column:1/-1;margin:3px 0 0;white-space:pre-wrap;unicode-bidi:plaintext;color:#d0dde3;font-size:13px;max-height:240px;overflow:auto}
+.sacred-details{grid-column:1/-1;min-width:0}
+.sacred-details:not([open]){height:0}
+.sacred-details summary{position:absolute;top:5px;right:-6px;display:flex;align-items:center;justify-content:center;list-style:none;width:44px;min-height:44px;cursor:pointer;color:#9eafba}
+.sacred-details summary::-webkit-details-marker{display:none}
+.sacred-details[open]{padding:12px 0 0;color:#afbfca;font-size:11px}
+.sacred-details dl{margin:10px 0}.sacred-details dt{color:#ddcda5}.sacred-details dd{margin:0 0 8px}.sacred-details code{white-space:normal;overflow-wrap:anywhere;font-size:10px}
+.sacred-details button{min-height:44px}
+.sacred-older{display:block;width:100%;min-height:44px;margin:8px 0 0;text-align:center;font-size:12px}
+.sacred-count{color:#e2d2a4;font-size:11px}.sacred-account{margin:0 0 16px}.sacred-account input{width:100%;min-width:0;box-sizing:border-box}.sacred-account p{color:#afbfca;font-size:11px}
+.sacred-skeleton>div{padding:16px 0;border-bottom:1px solid #c7ac702b}.sacred-skeleton span{display:block;height:9px;border-radius:4px;background:#afbfca13;margin:0 0 10px;width:45%}.sacred-skeleton span+span{width:90%;margin:0}

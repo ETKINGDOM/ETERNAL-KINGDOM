@@ -1,0 +1,39 @@
+.mobile-world-controls{pointer-events:none;position:fixed;z-index:16;inset:0}
+.movement-joystick,.mobile-gesture-buttons{pointer-events:auto;position:absolute;bottom:calc(190px + env(safe-area-inset-bottom,0px))}
+.movement-joystick{left:14px;width:108px;height:108px;border:1px solid #e6d1a45c;border-radius:50%;background:#132b4077;touch-action:none;user-select:none;-webkit-user-select:none;color:#f0ddb3;box-shadow:inset 0 0 18px #132b4022}
+.joystick-directions{display:flex;flex-direction:column;gap:18px;align-items:center;font:11px/1 Arial,sans-serif;opacity:.65;pointer-events:none}
+.joystick-knob{position:absolute;left:calc(50% - 22px);top:calc(50% - 22px);width:44px;height:44px;border:1px solid #e6d1a480;border-radius:50%;background:#d5b87b4d;pointer-events:none}
+.mobile-gesture-buttons{right:14px;display:grid;grid-template-columns:48px 48px;gap:6px}
+.mobile-gesture-buttons button{width:48px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1px solid #e6d1a45c;border-radius:11px;background:#132b4099;color:#f0ddb3;touch-action:manipulation}
+.mobile-gesture-buttons b{font:16px/1 Arial,sans-serif}.mobile-gesture-buttons small{font:8px/1.2 Arial,sans-serif}
+.mobile-gesture-buttons button[aria-pressed=true]{border-color:#ebd092;background:#b2924a70}
+.movement-joystick:focus-visible,.mobile-gesture-buttons button:focus-visible{outline:2px solid #edce8d;outline-offset:3px}
+.immersive[data-dock-collapsed=true] .movement-joystick,.immersive[data-dock-collapsed=true] .mobile-gesture-buttons{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+.immersive[data-touch-controls=true] .scene-bottom{bottom:calc(314px + env(safe-area-inset-bottom,0px))}
+.immersive[data-touch-controls=true][data-dock-collapsed=true] .scene-bottom{bottom:calc(220px + env(safe-area-inset-bottom,0px))}
+.scene-top-controls{display:flex;align-items:center;gap:8px;margin-left:auto}
+.immersive .scene-top-controls .room-pill{margin-left:0}
+.public-screen-entry{position:fixed;z-index:18;top:200px;right:35px;display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:6px 8px;border:1px solid #f4e2b64a;border-radius:9px;background:#1a3047bf;color:#fff0cf;font-size:10px;white-space:nowrap;touch-action:manipulation}
+.public-screen-entry[aria-expanded=true]{border-color:#ebd092;background:#856b3577;color:#ffe4a6}
+.public-screen-entry:focus-visible{outline:2px solid #edce8d;outline-offset:2px}
+@media(max-width:700px){.public-screen-entry{top:194px;right:17px}}
+@media(max-height:500px) and (min-width:500px){.public-screen-entry{top:90px;right:235px}}
+@media(pointer:coarse),(max-width:700px),(max-height:500px){
+  .immersive .sound-controls .sound-button[aria-pressed]{width:44px;height:44px;min-width:44px;min-height:44px;padding:0;gap:0;justify-content:center;border-radius:50%;touch-action:manipulation}
+  .immersive .sound-controls .sound-button[aria-pressed] span,.immersive .sound-controls input[aria-label="Ambient sound volume"]{display:none}
+  .immersive .sound-controls .sound-button[aria-pressed=true]{border-color:#ebd092;background:#856b3577;color:#ffe4a6}
+}
+@media(max-width:700px){.view-controls{top:144px}.immersive[data-dock-collapsed=false] .scene-bottom{bottom:calc(220px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:360px){.movement-joystick{left:12px;width:96px;height:96px}.mobile-gesture-buttons{right:12px;grid-template-columns:44px 44px;gap:4px}.mobile-gesture-buttons button{width:44px}.immersive[data-dock-collapsed=false] .scene-bottom{bottom:calc(280px + env(safe-area-inset-bottom,0px))}}
+@media(max-height:500px){
+  /* Keep map/faith access above the joystick in short touch landscapes. */
+  .immersive[data-touch-controls=true] .world-directory{top:156px;left:17px;max-width:220px;z-index:19}
+  .immersive[data-touch-controls=true] .world-directory>button{min-height:44px}
+  .immersive[data-touch-controls=true] .world-directory section{max-height:calc(100dvh - 220px);overflow:auto;overscroll-behavior:contain}
+  .movement-joystick{width:96px;height:96px}.joystick-directions{gap:15px}
+  .movement-joystick,.mobile-gesture-buttons{bottom:calc(142px + env(safe-area-inset-bottom,0px))}
+  .immersive[data-dock-collapsed=true] .movement-joystick,.immersive[data-dock-collapsed=true] .mobile-gesture-buttons{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+  .immersive[data-touch-controls=true] .scene-bottom,.immersive[data-touch-controls=true][data-dock-collapsed=true] .scene-bottom{bottom:calc(16px + env(safe-area-inset-bottom,0px));left:auto;right:14px}
+  .immersive[data-touch-controls=true] .sound-button{min-width:44px;min-height:44px;justify-content:center}
+  .immersive[data-touch-controls=true] .sound-button span,.immersive[data-touch-controls=true] .sound-controls input{display:none}
+}

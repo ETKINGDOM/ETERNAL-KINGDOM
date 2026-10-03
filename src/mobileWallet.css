@@ -1,0 +1,12 @@
+.mobile-wallet-access{margin-top:16px;padding:14px;border:1px solid #d9bd7844;border-radius:10px;background:#10253755;}
+.mobile-wallet-access summary{cursor:pointer;color:#edd59b;font-size:15px;padding:5px 0;}
+.mobile-wallet-access p{margin-top:12px;}
+.mobile-wallet-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.mobile-wallet-options button{min-width:0;text-align:start;padding:12px;}
+.mobile-wallet-options small{display:block;font-size:10px;margin-top:5px;}
+.mobile-wallet-access code{display:block;overflow-wrap:anywhere;white-space:normal;color:#d6e4e9;font-size:12px;margin-top:14px;user-select:text;}
+.mobile-wallet-review{margin-top:16px;padding:12px;border:1px solid #d9bd7888;border-radius:8px;}
+.mobile-wallet-review h4{margin:0;font-size:15px;color:#efdfb3;}
+.wallet-login-group{padding:10px 0;border-bottom:1px solid #d9bd7833;}.wallet-login-group .fine-print{margin:8px 0;}.wallet-login-group .text-button{min-height:44px;}.wallet-login-group button:focus-visible{outline:2px solid #edce8d;outline-offset:2px;}
+.mobile-wallet-review a{display:block;text-align:center;margin-top:14px;min-height:44px;padding:12px;}
+@media(max-width:450px){.mobile-wallet-options{grid-template-columns:minmax(0,1fr);}}

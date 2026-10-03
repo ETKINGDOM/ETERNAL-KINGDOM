@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "language": "en",
+  "entries": [
+    {
+      "id": "alpha-testing-boundaries",
+      "category": "safety",
+      "title": "A world taking its first steps.",
+      "body": "This is a hosted alpha test, not yet a decentralized world. Prayer, confession and praise currently offer local previews only; they are not saved or submitted onchain.\n\nDonations, token transfers and property purchases are not enabled. Never share a seed phrase or private key. Public chat is visible to other visitors; keep sensitive personal words out of it.",
+      "publishedAt": "2026-09-28T00:00:00Z",
+      "pinned": true
+    },
+    {
+      "id": "first-world-gardens-open",
+      "category": "world",
+      "title": "The gardens are open.",
+      "body": "Meet other pilgrims, explore the Sanctuary, and help shape the first chapter. You may enter as a guest. Wallet verification is optional and does not request a payment.",
+      "publishedAt": "2026-09-28T00:00:00Z",
+      "pinned": false
+    },
+    {
+      "id": "first-world-exploration",
+      "category": "visit",
+      "title": "Beyond the gardens.",
+      "body": "Use Other maps to find the paths to Cedar Valley, Mirror Lake, the Cloud Cloister and the Market Street. These places are open for quiet exploration. Market stalls and residences are display-only; trade and ownership are not available.",
+      "publishedAt": "2026-09-28T00:00:00Z",
+      "pinned": false
+    }
+  ]
+}

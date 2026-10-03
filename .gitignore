@@ -1,0 +1,29 @@
+.DS_Store
+tmp/
+__pycache__/
+*.pyc
+.env
+.env.*
+node_modules/
+dist/
+.wrangler/
+.dev.vars*
+test-results/
+playwright-report/
+# Keep generated narration local until public redistribution rights are verified.
+public/audio/*.mp3
+
+# Private development and operational inputs
+node_modules
+tests/
+e2e/
+scripts/
+*.test.*
+*.spec.*
+*.local.*
+vitest.config.*
+playwright.config.*
+*.pem
+*.key
+*.p12
+*.pfx

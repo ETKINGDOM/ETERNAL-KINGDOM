@@ -1,0 +1,13 @@
+.social-panel{display:grid;gap:14px;min-width:0;font-size:13px;line-height:1.6}
+.social-panel .muted,.social-panel .fine-print{margin:0}.social-panel h4{margin:16px 0 8px;font-size:13px}
+.social-contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;max-height:190px;overflow:auto}
+.social-contact{display:grid;text-align:left;padding:12px;border:1px solid #9c89594d;border-radius:8px;overflow-wrap:anywhere;min-width:0}
+.social-contact.active{background:#ad8c4522;border-color:#c2a76b}.social-contact small{font-size:10px;opacity:.8}
+.social-conversation{min-width:0;border-top:1px solid #b99b5833;padding-top:14px}.social-conversation h3{font-size:24px;overflow-wrap:anywhere}
+.social-person-id{display:block;overflow-wrap:anywhere;font-size:10px;opacity:.7;margin-top:6px}
+.social-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}.social-actions button{min-height:40px;white-space:normal}
+.social-panel .notice{font-size:12px;line-height:1.7;margin:14px 0}.social-panel .form-error{color:#ffc1ae;overflow-wrap:anywhere}
+.private-chat-log{max-height:260px;overflow:auto;border:1px solid #ad996244;border-radius:10px;padding:12px;margin:12px 0}
+.private-chat-log p{padding:8px 0;overflow-wrap:anywhere}.private-chat-log b{font-size:11px}.private-chat-log time{font-size:10px;opacity:.65;margin-left:10px}
+.private-chat-log span{display:block;white-space:pre-wrap}.social-panel textarea{min-height:90px;margin:8px 0}
+@media(max-width:520px){.social-panel{font-size:12px}.social-actions button{flex:1 1 135px}.social-panel .fine-print{font-size:11px}.social-panel textarea{font-size:16px}.social-contacts{max-height:150px}}

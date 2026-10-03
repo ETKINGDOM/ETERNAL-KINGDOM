@@ -1,0 +1,84 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "eternal-kingdom",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-24",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "MODERATOR_ACCOUNTS": "[]"
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "WORLD_ROOMS",
+        "class_name": "WorldRoom"
+      },
+      {
+        "name": "WALLET_SESSIONS",
+        "class_name": "WalletSessionStore"
+      },
+      {
+        "name": "ACCOUNT_PROFILES",
+        "class_name": "AccountProfileStore"
+      },
+      {
+        "name": "SOCIAL_INBOXES",
+        "class_name": "SocialInbox"
+      },
+      {
+        "name": "SOCIAL_PAIRS",
+        "class_name": "SocialPair"
+      },
+      {
+        "name": "COMMUNITY",
+        "class_name": "CommunityHub"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "WorldRoom"
+      ]
+    },
+    {
+      "tag": "v2-wallet-sessions",
+      "new_sqlite_classes": [
+        "WalletSessionStore"
+      ]
+    },
+    {
+      "tag": "v3-account-profiles",
+      "new_sqlite_classes": [
+        "AccountProfileStore"
+      ]
+    },
+    {
+      "tag": "v4-private-social",
+      "new_sqlite_classes": [
+        "SocialInbox",
+        "SocialPair"
+      ]
+    },
+    {
+      "tag": "v5-community",
+      "new_sqlite_classes": [
+        "CommunityHub"
+      ]
+    }
+  ],
+  "observability": {
+    "enabled": false
+  }
+}

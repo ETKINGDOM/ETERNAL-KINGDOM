@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "network": null,
+  "godTokenContract": null,
+  "testnetGiftBroadcast": false,
+  "testnetDonationBroadcast": false,
+  "testnetPrayerBroadcast": false,
+  "testnetHolderFaithBroadcast": false,
+  "mainnetBroadcast": {
+    "gifts": false,
+    "donations": false,
+    "prayers": false,
+    "holderFaith": false
+  },
+  "faithRecords": {
+    "contract": null,
+    "prayerCodeHash": null,
+    "access": "holder-only",
+    "holderContract": null,
+    "holderCodeHash": null
+  },
+  "godTokenDonation": {
+    "recipient": null,
+    "startBlock": null
+  },
+  "nativeDonationAddresses": {
+    "bitcoin": null,
+    "solana": null
+  }
+}

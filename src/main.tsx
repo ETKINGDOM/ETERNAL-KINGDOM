@@ -1,0 +1,20 @@
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import {ResponseNarrationProvider} from './ResponseNarration';
+import FeatureBoundary from './FeatureBoundary';
+import './style.css';
+import './celestial.css';
+import './immersive.css';
+import './social.css';
+import './moderation.css';
+import './announcements.css';
+import './quickChat.css';
+import './blessing.css';
+import './gifts.css';
+import './profileBackup.css';
+import './mobileWallet.css';
+import './worldToolbar.css';
+import './mobileWorldControls.css';
+
+createRoot(document.getElementById('root')!,{onCaughtError:()=>{/* No exception objects, drafts or wallet data enter logs. */}}).render(<StrictMode><ResponseNarrationProvider><FeatureBoundary label="World"><App /></FeatureBoundary></ResponseNarrationProvider></StrictMode>);

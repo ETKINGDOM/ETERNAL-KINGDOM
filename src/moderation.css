@@ -1,0 +1,10 @@
+.safety-panel{display:grid;gap:14px;font-size:13px;line-height:1.65;min-width:0}.safety-panel .fine-print{margin:0}
+.safety-panel select{display:block;width:100%;padding:10px;border:1px solid #c3ad6b66;border-radius:7px;background:#152b40;color:#f0e6cb;min-width:0}
+.safety-room{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px}
+.report-evidence{margin:8px 0;padding:12px;border-left:2px solid #c5aa69;background:#dbc68b0d;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}
+.review-report{padding:14px 0;border-top:1px solid #c2a05e44;min-width:0}.review-report small{display:block;font-size:10px;opacity:.7}.review-report code{font-size:10px;overflow-wrap:anywhere}
+.safety-confirm{position:relative}.safety-confirm h3{font-size:20px}.safety-panel [role=alert]{color:#ffd4b5;overflow-wrap:anywhere}
+.review-report>code{display:block;margin:6px 0}
+.report-message{font-size:9px;color:inherit;border:1px solid #c3ad6b44;border-radius:4px;padding:4px 6px;align-self:flex-start;flex-shrink:0}.chat-moderation{font-size:10px;text-decoration:underline;padding:8px 0}
+.chat-message .hide-message{margin-left:0;flex-shrink:0}.chat-message>div{flex:1}
+@media(max-width:520px){.safety-panel select{font-size:16px}.safety-panel .fine-print{font-size:11px}.safety-room{grid-template-columns:1fr}.report-message{padding:5px;font-size:10px}}

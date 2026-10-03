@@ -1,0 +1,26 @@
+.entry-blessing{display:flex;align-items:center;gap:10px;margin:20px auto 0;padding:12px 18px;border:1px solid #ead59c77;border-radius:8px;background:#173148b3;color:#f9e4b5;text-align:left;font-size:12px}
+.entry-blessing img{width:31px;height:31px;border-radius:50%}
+.entry-blessing span{display:block}.entry-blessing small{display:block;margin-top:4px;font-size:9px;color:#d1d9d7}
+.entry-blessing:hover{background:#23425ad9}.entry-blessing:focus-visible{outline:2px solid #f0d294;outline-offset:3px}
+dialog:has(.blessing-tool){width:min(780px,calc(100vw - 24px));max-width:780px;max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box;color:#f1e7d0}
+.blessing-intro{font:italic 21px/1.5 Georgia,serif;color:#f5e5bc;margin:0 0 8px}
+.blessing-privacy{font-size:12px;line-height:1.6;color:#c5d5d8;margin:0 0 22px}
+.blessing-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+.blessing-preview{position:relative;display:grid;place-items:center;aspect-ratio:1;background:conic-gradient(#243e51 25%,#2d495b 0 50%,#243e51 0 75%,#2d495b 0);background-size:24px 24px;border:1px solid #cfb77966;border-radius:12px;overflow:hidden}
+.blessing-preview canvas{display:block;max-width:100%;width:100%;height:auto}.blessing-preview canvas[hidden]{display:none}
+.blessing-placeholder{display:flex;flex-direction:column;align-items:center;gap:15px;padding:22px;color:#d8e0de;font-size:12px;text-align:center}
+.blessing-placeholder img{width:100px;height:100px;border-radius:50%;opacity:.75}
+.blessing-settings{min-width:0;font-size:12px}.blessing-file{display:flex;align-items:center;gap:8px;font-size:13px;color:#f2d7a0;margin-bottom:8px;padding:12px;border:1px solid #ccb77f77;border-radius:6px;background:#163147;cursor:pointer;min-height:44px;box-sizing:border-box}
+.blessing-settings input[type=file]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.blessing-settings:has(input[type=file]:focus-visible) .blessing-file{outline:2px solid #edce8d;outline-offset:3px}
+.blessing-file:hover{background:#28485c}
+.blessing-settings>small{display:block;color:#b8c9ce;font-size:10px;line-height:1.6;margin-top:7px}
+.blessing-tool fieldset{border:0;padding:0;margin:19px 0 0;min-width:0}
+.blessing-tool legend{font-size:12px;color:#eed7a2;margin-bottom:10px}.blessing-styles label{display:grid;grid-template-columns:18px 1fr;column-gap:8px;align-items:center;padding:9px 0;color:#e8e9df;cursor:pointer}
+.blessing-styles input{grid-row:span 2;margin:0;accent-color:#e0be71;width:16px;height:16px}.blessing-styles small{margin-top:4px;color:#b8c9ce;font-size:10px}
+.blessing-crop label{display:grid;grid-template-columns:80px minmax(0,1fr);gap:8px;align-items:center;margin:12px 0;color:#c9d7d7;font-size:11px}
+.blessing-crop input[type=range]{width:100%;padding:0;accent-color:#dfbd76}
+.blessing-reset{display:inline-flex;align-items:center;gap:7px;color:#dac998;font-size:11px;padding:9px 0}
+.blessing-actions{display:flex;align-items:center;gap:22px;margin:24px 0 12px;flex-wrap:wrap}.blessing-actions .primary{display:flex;align-items:center;gap:10px}
+.blessing-tool button:disabled,.blessing-tool fieldset:disabled{opacity:.45}.blessing-notice{font-size:12px;line-height:1.6;color:#e3d5b4}.blessing-footnote{font-size:10px;line-height:1.7;color:#b6c6cc;margin-top:14px}
+@media(max-width:580px){dialog:has(.blessing-tool){padding:22px}.blessing-workspace{grid-template-columns:1fr;gap:18px}.blessing-preview{width:min(100%,260px);justify-self:center}.blessing-settings input[type=file]{font-size:12px}.blessing-settings input[type=range]{min-height:28px}.blessing-tool .blessing-actions .primary{min-height:44px}.entry-blessing{margin-top:16px}}
