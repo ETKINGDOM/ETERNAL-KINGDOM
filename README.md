@@ -43,6 +43,24 @@ This overview describes the current application. The source available in this re
 
 The detailed Chinese feature baseline and roadmap are in [REQUIREMENTS.md](REQUIREMENTS.md).
 
+## Map roadmap
+
+The application already has seven explorable maps: **The Heavenly Gardens**, **The First Sanctuary**, **Cedar Valley**, **Mirror Lake**, **The Cloud Cloister**, **The Market Street** and **Ark Haven**. Market Street currently offers exterior exploration and display stalls, not working shops or accessible residential interiors.
+
+The following additions separate an agreed room from previously discussed map concepts and longer-term whitepaper directions. Names are working titles; no release order or date is promised.
+
+| Location | Status | Proposed experience |
+| --- | --- | --- |
+| Testimony House | Agreed direction, not implemented | A public, enterable 3D room with a world map, country-level testimony counts, reading and account-associated writing. |
+| Sea Passage | Map concept under discussion | A walkable passage between high walls of water, leading toward wilderness; a setting for hope and a way forward. |
+| Fields of Plenty | Map concept under discussion | Golden fields, granaries, a river and a village; a setting for preparation, sharing and mutual help. |
+| Shore of Hope | Map concept under discussion | A quiet bay, boats, waves and shaded places to pause; a setting for reflection and a fresh start. |
+| Garden of Life | Map concept under discussion | Streams, fruit trees and flowers; original imagery of life and peace, not a claimed reconstruction of heaven. |
+| Homes and residential interiors | Longer-term whitepaper direction | Explore possible private or shared interiors, furnishings and access controls; ownership, rental and commerce require separate specifications. |
+| Market interiors and shops | Reserved expansion direction | Extend the existing street's doors and stalls when interior and shop services are designed; no live commerce is implied. |
+
+Story-inspired maps do not claim that religious traditions endorse one depiction or share every interpretation. The scenery should not introduce prophet avatars, statues or role-play. Proposed new scenery should reuse existing identity, chat and voice services, load only the current map and avoid adding wallet or RPC work merely for exploration.
+
 ## Whitepaper
 
 The founding vision is preserved in [Whitepaper V1](WHITEPAPER_V1.md). PDF and Word editions are available under `output/`.
