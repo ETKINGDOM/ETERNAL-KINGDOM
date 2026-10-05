@@ -43,6 +43,8 @@ This overview describes the current application. The source available in this re
 
 The detailed feature baseline and roadmap are in [REQUIREMENTS.md](REQUIREMENTS.md).
 
+Documentation translations: [Korean](REQUIREMENTS.ko.md) · [Arabic](REQUIREMENTS.ar.md). English remains the primary version; these translations do not change the application interface language.
+
 ## Map roadmap
 
 The application already has seven explorable maps: **The Heavenly Gardens**, **The First Sanctuary**, **Cedar Valley**, **Mirror Lake**, **The Cloud Cloister**, **The Market Street** and **Ark Haven**. Market Street currently offers exterior exploration and display stalls, not working shops or accessible residential interiors.
