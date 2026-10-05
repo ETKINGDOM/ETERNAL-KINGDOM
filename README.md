@@ -4,16 +4,44 @@ ETERNAL KINGDOM is a faith-centered virtual world by [ETKINGDOM](https://github.
 
 Explore a celestial world, create a personal appearance, meet other visitors, and participate in prayer, confession, praise and daily lamps.
 
-## Features
+## Implemented application features
 
-- Desktop and mobile exploration, touch controls and energy-aware 3D rendering.
-- EVM and Solana wallet sign-in, saved appearance and automatic God balance reading when configured.
-- Direct private chat, consent-based friends and voice parties of up to four people.
-- Daily lamps with a seven-light cycle and cumulative account totals.
-- Faith feedback, character light effects and personal records.
-- A database-backed public board with ten initial entries and five more per expansion; chain readers remain replaceable alternatives.
-- Configurable voluntary God gifts and donation interfaces; broadcasting is disabled in this source distribution.
-- Compact help hints and activity history, plus a guest-only explore-and-listen mode.
+This overview describes the current application. The source available in this repository may represent an earlier snapshot; planned features below are not implemented features.
+
+### World and characters
+
+- Desktop and mobile 3D exploration, touch movement, portrait/landscape layouts and energy-aware rendering.
+- Connected gardens, sanctuary and scenic maps, including Ark Haven: a large, three-level timber vessel with stairs, cabins and six pairs of scenic animals.
+- Personal appearance, refined procedural faces and loose hair, gestures and character light effects.
+- **Peaceful sound** background music, enabled by default at entry. Turning it off does not disable fixed faith-feedback audio or voice-party listening.
+- Guest exploration and listening. The Builder offers authored testimony and fixed recordings, not generated religious answers.
+
+### Identity and social interaction
+
+- EVM and Solana wallet sign-in and account-backed profiles. A new verified EVM login replaces the older online presence rather than creating a second character.
+- Compact character action menus, public chat and direct private chat. Private chat does not require friendship or an invitation; incoming whispers have unread indicators.
+- Friend requests that require acceptance. Each pair has one pending request; dismissing or rejecting does not create a 24-hour lockout. Friend-list actions show online/offline status.
+- Voice parties of up to four people, with invitation consent, collapsible participant controls and independent exit. Joining can be listen-only; the microphone button switches between speaking and listening.
+- Mobile wallet-opening links and keyboard-friendly chat submission. Real-device compatibility remains subject to acceptance testing.
+
+### Lamps, faith records and voluntary giving
+
+- Account-based daily lamps: one per UTC day, seven successful lights per cycle and a cumulative total. This is not a blockchain reward or spiritual rank.
+- Prayer, confession and praise interfaces, private-text handling, personal records and confirmation-based feedback that can continue after the submission panel closes.
+- A database-backed public board with ten initial entries and five more per expansion. Personal records have their own view; replaceable chain readers remain available.
+- Configurable God balance reading, voluntary gifts and donations, and donation rankings based on verified incoming transfers to the configured recipient.
+- Shared and bounded read caching, transaction-state tracking, compact help hints and activity history. An unknown or failed transaction is not displayed as confirmed success.
+- Replaceable token/service configuration and isolated release data. A new release can start fresh account, lamp, friendship and record data without claiming to delete old blockchain transactions.
+
+## Planned features
+
+- **Testimony House:** a public room entered through the existing 3D world. Everyone may enter and read; a world map shows testimony counts by country. Authors choose a country when writing, and readers select a country to browse its testimonies. Logged-in authors can associate their submissions with their account.
+- Testimonies will be deliberately public content, separate from private prayer and confession. The proposed storage is a database with lightweight country counts and paginated reading; publication, editing and moderation rules still need design.
+- **Simple client:** paused while its design is reconsidered. Neither the current compact 3D renderer nor the archived 2D view is a completed new simple client.
+- **TURN relay deployment:** a connectivity interface is reserved, but a production relay service is not activated. Provisioning, credentials, usage limits and cross-network/VPN acceptance tests are separate work.
+- Longer-term whitepaper directions include homes and interiors, portability, additional language/content support and community-operated services. These are future directions, not promised release dates or live services.
+
+The detailed Chinese feature baseline and roadmap are in [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Whitepaper
 
