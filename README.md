@@ -41,7 +41,7 @@ This overview describes the current application. The source available in this re
 - **TURN relay deployment:** a connectivity interface is reserved, but a production relay service is not activated. Provisioning, credentials, usage limits and cross-network/VPN acceptance tests are separate work.
 - Longer-term whitepaper directions include homes and interiors, portability, additional language/content support and community-operated services. These are future directions, not promised release dates or live services.
 
-The detailed Chinese feature baseline and roadmap are in [REQUIREMENTS.md](REQUIREMENTS.md).
+The detailed feature baseline and roadmap are in [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Map roadmap
 
