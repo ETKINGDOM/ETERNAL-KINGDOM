@@ -33,27 +33,37 @@ This overview describes the current application. The source available in this re
 - Shared and bounded read caching, transaction-state tracking, compact help hints and activity history. An unknown or failed transaction is not displayed as confirmed success.
 - Replaceable token/service configuration and isolated release data. A new release can start fresh account, lamp, friendship and record data without claiming to delete old blockchain transactions.
 
+### Testimony House
+
+The [Testimony House](https://eternalkingdom.online/?scene=testimony) is live in the hosted alpha. It is a shared place to sit, listen and discover deliberately public stories of faith, gratitude, struggle and hope.
+
+- Everyone may enter from the 3D world, open the atlas and read without a wallet, token, friendship or invitation.
+- The world map and searchable directory cover 249 countries and territories. Country counts come from published testimonies; the country is chosen by the author, not inferred from GPS or IP and not a verified location.
+- Twelve shared chairs face the atlas. Visitors walk to an available chair and sit; other people in the same realm see the occupied seat and seated character. Compact controls open the map, read testimonies or stand up. Closing the reader keeps the visitor seated; standing, walking or leaving releases the seat.
+- Verified EVM or Solana authors can publish a title, testimony and selected country after explicitly agreeing that the story will be public. **My testimonies** lets authors find and remove their own submissions. Signed-in reporting and configured moderator review are available.
+- Public testimonies are currently stored in the hosted database, not on the blockchain. Reading and publishing require no token transfer, Gas or additional wallet payment. Private prayers, confessions, whispers, wallet addresses and unsent drafts are not imported into the public archive.
+- Country totals are read together, articles are paginated and short-lived caching avoids unnecessary repeat requests. The archive does not run background polling or blockchain RPC reads.
+
 ## Planned features
 
-- **Testimony House:** a public room entered through the existing 3D world. Everyone may enter and read; a world map shows testimony counts by country. Authors choose a country when writing, and readers select a country to browse its testimonies. Logged-in authors can associate their submissions with their account.
-- Testimonies will be deliberately public content, separate from private prayer and confession. The proposed storage is a database with lightweight country counts and paginated reading; publication, editing and moderation rules still need design.
+- **On-chain testimony records:** a later phase for the live Testimony House. The record format, public-data boundaries, costs and user consent require a separate design and review. No testimony contract or automatic migration is active; existing database stories will not be silently uploaded to a blockchain.
 - **Simple client:** paused while its design is reconsidered. Neither the current compact 3D renderer nor the archived 2D view is a completed new simple client.
 - **TURN relay deployment:** a connectivity interface is reserved, but a production relay service is not activated. Provisioning, credentials, usage limits and cross-network/VPN acceptance tests are separate work.
 - Longer-term whitepaper directions include homes and interiors, portability, additional language/content support and community-operated services. These are future directions, not promised release dates or live services.
 
 The detailed feature baseline and roadmap are in [REQUIREMENTS.md](REQUIREMENTS.md).
 
-Documentation translations: [Korean](REQUIREMENTS.ko.md) · [Arabic](REQUIREMENTS.ar.md). English remains the primary version; these translations do not change the application interface language.
+Documentation translations: [Korean](REQUIREMENTS.ko.md) · [Arabic](REQUIREMENTS.ar.md). These translations describe an earlier feature baseline; this English version contains the latest Testimony House update. English remains the primary version and application interface language.
 
 ## Map roadmap
 
-The application already has seven explorable maps: **The Heavenly Gardens**, **The First Sanctuary**, **Cedar Valley**, **Mirror Lake**, **The Cloud Cloister**, **The Market Street** and **Ark Haven**. Market Street currently offers exterior exploration and display stalls, not working shops or accessible residential interiors.
+The application already has eight explorable maps: **The Heavenly Gardens**, **The First Sanctuary**, **Cedar Valley**, **Mirror Lake**, **The Cloud Cloister**, **The Market Street**, **Ark Haven** and **Testimony House**. Market Street currently offers exterior exploration and display stalls, not working shops or accessible residential interiors.
 
-The following additions separate an agreed room from previously discussed map concepts and longer-term whitepaper directions. Names are working titles; no release order or date is promised.
+The following table distinguishes the live Testimony House from previously discussed map concepts and longer-term whitepaper directions. Future map names are working titles; no release order or date is promised.
 
 | Location | Status | Proposed experience |
 | --- | --- | --- |
-| Testimony House | Agreed direction, not implemented | A public, enterable 3D room with a world map, country-level testimony counts, reading and account-associated writing. |
+| Testimony House | Live hosted alpha | A public 3D room with a world atlas, country-level testimony counts, shared seating, seated reading and account-associated writing. Storage is database-backed; on-chain records remain a future phase. |
 | Sea Passage | Map concept under discussion | A walkable passage between high walls of water, leading toward wilderness; a setting for hope and a way forward. |
 | Fields of Plenty | Map concept under discussion | Golden fields, granaries, a river and a village; a setting for preparation, sharing and mutual help. |
 | Shore of Hope | Map concept under discussion | A quiet bay, boats, waves and shaded places to pause; a setting for reflection and a fresh start. |

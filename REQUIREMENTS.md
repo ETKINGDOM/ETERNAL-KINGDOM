@@ -20,7 +20,7 @@ This document describes the current application and the directions discussed for
 - Voice invitations require acceptance, with a maximum of four participants. Joining may be listen-only; a missing microphone must not prevent listening. Only the person's microphone action requests capture permission. Turning it off returns to listening, without automatic microphone restart.
 - The top-left voice roster shows simple avatars and names and can be collapsed. Exit removes only the person leaving; one participant's connection failure should not dissolve everyone else's party.
 - Mobile wallet-opening links avoid redundant confirmation. Chat submission accommodates keyboard dismissal and focus changes. Actual devices, wallets and networks still require acceptance testing.
-- Blocking and reporting interfaces remain reserved; additional user-facing controls are deferred.
+- Additional social blocking and reporting controls remain reserved; Testimony House reporting is described in Section 6.
 
 ## 3 Implemented Lamps Records and Feedback
 
@@ -44,22 +44,48 @@ This document describes the current application and the directions discussed for
 - Clearing the token configuration leaves an explore-and-listen showcase without onchain actions. A new token release starts an independent data cycle: profiles, names, appearances, cumulative lamps, friends, sessions and website records start fresh, without carrying test data forward.
 - One-step clearing and redeployment are private operational workflows that require separate authorization to execute. Data-cycle isolation is not physical database deletion, and historical blockchain transactions cannot be erased. Changing the token contract must not reuse stale record-contract bindings or automatically enable payments.
 
-## 6 Planned Testimony House
+## 6 Implemented Testimony House — Hosted Alpha
 
-The agreed product direction is:
+The [Testimony House](https://eternalkingdom.online/?scene=testimony) is a live shared room in the existing 3D world, independent of the paused simple client. It brings the country atlas, public stories and places to sit into one explorable space.
 
-- An enterable public Testimony House in the existing 3D world, independent of the future simple client.
+### Entry and World Atlas
+
+- Visitors enter through the garden passage or map selection.
 - Everyone may enter, view the map and read testimonies. Visiting and reading require no wallet, token holding, friendship or invitation.
-- A world map inside the house displays testimony counts by country in the first version, without city-level detail.
+- A world map and searchable English directory cover 249 countries and territories. Totals reflect published, visible testimonies, without fabricated stories or city-level detail.
 - Authors select or search for a country rather than having one inferred from GPS, IP or wallet data. This is an author-selected association, not location verification.
-- Logged-in submissions are associated with their authors, appear under the selected country and update its count. Selecting a country opens its testimonies. Login establishes authorship, not entry permission.
-- Testimonies are deliberately public submissions. Private prayers, confessions, whispers and wallet addresses must not be imported automatically.
+- Selecting a country opens its stories. The archive is shared across realms within the same release; seating and online visitors remain realm-scoped.
 
-The proposed implementation stores public testimonies in a database, reads country counts together and loads articles in pages after a country is selected, rather than making separate RPC requests for map markers. Validation, content length, editing, deletion, moderation and abuse controls still need design. The feature is not implemented and has no promised release date.
+### Shared Chairs and Seated Reading
+
+- Twelve chairs face the world atlas. Selecting a chair or the seat directory walks the visitor to it before requesting a seat.
+- The multiplayer server checks proximity and allows one occupant per chair. Seated poses and occupancy are visible to other visitors, including people arriving later.
+- Compact seated controls offer **Open world map**, **Read testimonies** and **Stand up from seat**. Closing the reader does not stand the character up.
+- Standing, walking, gesturing or leaving releases the seat. An explicit disconnect releases it immediately; a silent connection loss is bounded by a 65-second seat lease refreshed through the existing heartbeat, not new archive or blockchain polling.
+
+### Publishing, Reading and Moderation
+
+- A verified EVM or Solana account may publish a title, public testimony and selected country after explicit public-content consent. Login establishes authorship, not entry permission; public author names do not expose raw wallet addresses.
+- Titles accept 3–100 characters and testimony bodies 20–4,000 characters. Each account may create five testimonies per UTC day. Reading is paginated, with twelve stories per requested page.
+- **My testimonies** lets authors find and remove their own submissions. Removal hides the public text and updates country totals. Minimal duplicate-prevention metadata remains; copies already obtained by other people cannot be recalled.
+- Signed-in visitors can report a testimony. Configured moderators can review reports, dismiss them or hide a story. A report alone does not automatically hide content or punish its author.
+- Submissions use duplicate-prevention identifiers. An unknown network result is not automatically resubmitted, and a delayed duplicate cannot resurrect a removed story.
+- Country totals are read together and cached in the tab for fifteen seconds. Manual refresh, publication and removal invalidate the relevant reads. Articles load on demand; there is no background archive polling or per-country blockchain RPC work.
+
+### Current Storage and Privacy
+
+- The hosted alpha stores testimonies in Cloudflare Durable Object SQL. These are database records, not blockchain transactions. Reading and publishing require no token transfer, Gas or additional wallet payment.
+- Ordinary website updates preserve the current release archive. An explicitly authorized fresh release selects a separate data namespace; it is not a claim that old databases or downloaded copies are physically deleted.
+- Testimonies are deliberately public submissions. Private prayers, confessions, whispers, raw wallet addresses and unsent drafts are not imported into this archive. Unsent drafts remain in memory and are discarded when the form closes or the account changes.
+- The room and its current storage are implemented in the hosted application. This documentation update does not imply that the older public source snapshot contains the latest private implementation.
+
+### Future On-Chain Records
+
+Blockchain-backed testimony records are a later phase, not an active feature. Record structure, public-data boundaries, consent, costs and removal limitations require a separate design and review. No testimony contract is deployed and no existing story is automatically migrated. Contract deployment, migration or payment activation would each require explicit authorization.
 
 ## 7 Map Catalog and Expansion Roadmap
 
-### Seven Implemented Maps
+### Eight Implemented Maps
 
 | Map | Current experience and limits |
 | --- | --- |
@@ -70,10 +96,11 @@ The proposed implementation stores public testimonies in a database, reads count
 | The Cloud Cloister | Colonnades, terraces and exploration paths above the clouds. |
 | The Market Street | Building exteriors, closed doors and display stalls with inspectable descriptions. Interiors, shop transactions and property ownership are not open. |
 | Ark Haven | The implemented three-level vessel, stairs, cabins, decks and six pairs of animals. It is not listed again as an unbuilt map. |
+| Testimony House | A public room with the country atlas, shared chairs, seated reading and account-associated testimony publishing. Its current archive uses the hosted database, not a blockchain. |
 
-### Agreed New Location
+### Testimony House Record-Layer Roadmap
 
-**Testimony House is planned, not implemented.** It follows the country-level testimony design above: a public interior for everyone to visit and read, with account-associated writing and a way for authors to find their records. Its world map represents real-world countries, not the game's destination menu. Whether it needs a separate scene or room instance will be decided during implementation, without assuming another service is necessary.
+The room, seating and database archive are live in the hosted alpha. The proposed on-chain record layer remains separate future work. The room's world atlas represents real-world countries, not the game's destination menu.
 
 ### Previously Discussed Story and Scenery Concepts
 
@@ -102,6 +129,7 @@ These are expansion concepts, not confirmed production commitments or scheduled 
 
 ## 8 Paused Work and Future Directions
 
+- **On-chain testimony records are planned.** The current room and public archive are live, but testimony contracts, transaction submission and automatic migration are not. A reviewed design and explicit user consent must precede any chain-backed publication.
 - **Simple client is paused.** Its design remains undecided, including whether it uses a fixed view, 2.5D or another approach. The current compact 3D renderer and archived 2D view are not a completed new simple client.
 - **TURN relay integration is reserved, but the relay service is inactive.** Provider selection, configuration, temporary credentials, usage limits and real-device, cross-network and VPN acceptance tests are separate work. Reliability on every network and permanently free operation are not promised.
 - **Longer-term vision:** evaluate homes and interiors, portable profiles and backups, additional languages and content, and community-operated services in line with the whitepaper. Scope, priorities, funding and governance require further decisions and are not current completed features.
